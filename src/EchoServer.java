@@ -12,7 +12,6 @@ public class EchoServer {
                 DatagramPacket packet = new DatagramPacket(buf, buf.length);
                 try {
                     socket.receive(packet);
-
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
