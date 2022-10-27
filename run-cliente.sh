@@ -1,3 +1,3 @@
 #!/bin/sh
 
-java -cp out Cliente 
+java -cp out EchoClient

@@ -1,3 +1,3 @@
 #!/bin/sh
 
-java -cp out Servidor 
+java -cp out EchoServer

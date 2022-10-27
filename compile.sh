@@ -1,4 +1,4 @@
 #!/bin/sh
 
-rm -rf out
+rm -rf out/*
 javac -d out src/*.java
