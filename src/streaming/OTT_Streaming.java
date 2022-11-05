@@ -1,3 +1,5 @@
+package streaming;
+
 public class OTT_Streaming {
     public static void main(String[] args){
         if (args.length >= 1){

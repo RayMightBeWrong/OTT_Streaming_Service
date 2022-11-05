@@ -1,3 +1,4 @@
+package streaming;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -19,7 +20,10 @@ public class UDPServer extends Thread{
                     e.printStackTrace();
                 }
             }
-        } catch (SocketException e) {
+
+            //socket.close();
+        } 
+        catch (SocketException e) {
             e.printStackTrace();
         }
     }

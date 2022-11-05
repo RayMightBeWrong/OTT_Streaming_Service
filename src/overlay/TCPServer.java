@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+
 public class TCPServer extends Thread{
     public void run(){
         try{
@@ -19,6 +20,8 @@ public class TCPServer extends Thread{
                 System.out.println(in.readLine());
                 System.out.println("c'mon");
             }
+
+            //server.close();
         }
         catch (IOException e){
             e.printStackTrace();
