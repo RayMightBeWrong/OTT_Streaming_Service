@@ -14,7 +14,8 @@ import org.w3c.dom.NodeList;
 
 public class ConfigParser {
     private File file;
-
+    public static String bstrapperName = "O1";
+ 
     public ConfigParser(String filepath){
         this.file = new File(filepath);
     }
@@ -34,6 +35,7 @@ public class ConfigParser {
             return g;
         }
         catch (Exception e){
+            e.printStackTrace();
             return null;
         }
     }
@@ -48,7 +50,7 @@ public class ConfigParser {
             graph.put(entry.getAttribute("n"), null);
         }
 
-        return new Graph(graph);
+        return new Graph(graph, bstrapperName);
     }
 
     public Vertex readNode(Element node){

@@ -10,11 +10,18 @@ public class Vertex {
     private Map<String, InetAddress> adjacents;
     private Map<String, Map<String, Double>> routes;
 
+    public Vertex(String name, InetAddress ip){
+        this.name = name;
+        this.ip = ip;
+        this.adjacents = new HashMap<>();
+        this.routes = new HashMap<>();
+    }
+
     public Vertex(String name, InetAddress ip, Map<String, InetAddress> adjacents){
         this.name = name;
         this.ip = ip;
         this.adjacents = adjacents;
-        this.routes = null;
+        this.routes = new HashMap<>();
     }
 
     public Vertex(String name, InetAddress ip, Map<String, InetAddress> adjacents, Map<String, Map<String, Double>> routes){

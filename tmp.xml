@@ -18,8 +18,10 @@
 		<adj>O2</adj>
 	</node>
 	<node n='O2'>
-		<ip>192.168.56.101</ip>
+		<ip>127.0.0.2</ip>
 		<adj>O1</adj>
+		<adj>O3</adj>
+		<adj>O7</adj>
 	</node>
 	<node n='O3'>
 		<ip>127.0.0.3</ip>

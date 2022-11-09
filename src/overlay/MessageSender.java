@@ -18,19 +18,12 @@ public class MessageSender {
     }
 
 
-    /*  CLIENT MESSAGES */
+    /*  BOOTSTRAPPER MESSAGES */
 
-    public void initialMessageClient(){
-        sendMessage("hello");
-    }
-
-
-    /*  SERVER MESSAGES */
-
-    public void initialMessageServer(String nodeName, Map<String, InetAddress> adjs) throws IOException{
+    public void initialMessageBootstrapper(String nodeName, Map<String, InetAddress> adjs) throws IOException{
         sendSelfNodeInfo(nodeName);
         sendAdjacents(adjs);
-        close();
+        end();
     }
 
     public void sendSelfNodeInfo(String nodeName){
@@ -44,13 +37,21 @@ public class MessageSender {
         out.flush();
     }
 
-    public void close(){
-        sendMessage("close");
+
+    
+    /*  CLIENT MESSAGES */
+
+    public void initialMessageClient(){
+        sendMessage("hello");
     }
 
 
 
-    /*  MESSAGES SENT BY BOTH */
+    /*  MESSAGES SENT BY ALL*/
+
+    public void end(){
+        sendMessage("end");
+    }
 
     public void ping(){
         sendMessage("ping");

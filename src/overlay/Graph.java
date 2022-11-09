@@ -1,6 +1,7 @@
 package overlay;
 
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -8,9 +9,20 @@ import java.util.Map;
 
 public class Graph {
     private Map<String, Vertex> nodes;
+    private String me;
 
-    public Graph(Map<String, Vertex> nodes){
+    public Graph(){
+        this.nodes = new HashMap<>();
+    }
+
+    public Graph(String me){
+        this.nodes = new HashMap<>();
+        this.me = me;
+    }
+
+    public Graph(Map<String, Vertex> nodes, String me){
         this.nodes = nodes;
+        this.me = me;
     }
 
     public void addNode(Vertex v){
@@ -46,8 +58,12 @@ public class Graph {
             return nodeName;
     }
 
+    public Map<String, InetAddress> getMyAdjacents(){
+        return getNodeAdjacents(this.me);
+    }
+
     public Map<String, InetAddress> getNodeAdjacents(String key){
-        Vertex node = this.nodes.get(key);        
+        Vertex node = this.nodes.get(key);
         Map<String, InetAddress> adjs = node.getAdjacents();
 
         Map<String, InetAddress> res = new HashMap<>();
@@ -70,5 +86,21 @@ public class Graph {
 
         this.nodes.remove(name);
         return adjs;
+    }
+
+    public void buildGraphFromAdjs(Map<String, InetAddress> adjs){
+        Map<String, Vertex> res = new HashMap<>();
+
+        try {
+            res.put(me, new Vertex(me, InetAddress.getLocalHost(), adjs));
+        } catch (UnknownHostException e) {
+            res.put(me, new Vertex(me, null, adjs));
+        }
+        
+        for(Map.Entry<String, InetAddress> entry: adjs.entrySet()){
+            res.put(entry.getKey(), new Vertex(entry.getKey(), entry.getValue()));
+        }
+
+        this.nodes = res;
     }
 }
