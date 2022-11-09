@@ -61,7 +61,6 @@ public class Graph {
 
     public List<String> deleteNode(String name){
         Vertex node = this.nodes.get(name);
-        System.out.println(node);
         List<String> adjs = new ArrayList<>(node.getAdjacents().keySet());
 
         for (String adj: adjs){

@@ -6,7 +6,6 @@ public class NodeManager {
             if (args[0].equals("-server")){
                 ConfigParser parser = new ConfigParser(args[1]);
                 Graph graph = parser.parseXML();
-                System.out.print(graph);
 
                 Thread server = new Thread(new TCPServer(graph));
                 server.start();
