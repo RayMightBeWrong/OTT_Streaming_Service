@@ -48,6 +48,7 @@
 			<address>10.0.19.20</address>
 		</entry>
 	</nodes>
+	<bootstrapper name="O1"/>
 	<node n='O1'>
 		<adj>O2</adj>
 	</node>

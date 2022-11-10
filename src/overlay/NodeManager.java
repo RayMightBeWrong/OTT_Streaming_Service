@@ -10,6 +10,7 @@ public class NodeManager {
             Graph graph = parser.parseXML();
             System.out.println(graph.toString());
 
+            /*
             Thread bstrapper = new Thread(new BStrapper(graph));
             bstrapper.start();
 
@@ -17,7 +18,7 @@ public class NodeManager {
                 bstrapper.join();
             } catch (InterruptedException e) {
                 e.printStackTrace();
-            }
+            }*/
         }
         else if (args.length == 1){
             Graph graph = BStrapperClient.readInitialMsg(args[0]);

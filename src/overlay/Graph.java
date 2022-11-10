@@ -1,7 +1,6 @@
 package overlay;
 
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -9,25 +8,26 @@ import java.util.Map;
 
 public class Graph {
     private Map<String, Vertex> nodes;
-    private String me;
 
-    public Graph(){
-        this.nodes = new HashMap<>();
-    }
-
-    public Graph(String me){
-        this.nodes = new HashMap<>();
-        this.me = me;
-    }
-
-    public Graph(Map<String, Vertex> nodes, String me){
+    public Graph(Map<String, Vertex> nodes){
         this.nodes = nodes;
-        this.me = me;
     }
 
-    public void addNode(Vertex v){
-        if (nodes.containsKey(v.getName()))
-            nodes.put(v.getName(), v);
+    public List<InetAddress> getNodeIPList(String node){
+        if (this.nodes.containsKey(node)){
+            Vertex v = this.nodes.get(node);
+            return v.getIPList();
+        }
+        else
+            return null;
+    }
+
+    public void setAdjacentsInNode(String nodeName, Map<String, List<InetAddress>> adjs){
+        if (this.nodes.containsKey(nodeName)){
+            Vertex v = this.nodes.get(nodeName);
+            v.setAdjacents(adjs);
+            this.nodes.put(nodeName, v);
+        }
     }
 
     public String toString(){
@@ -37,7 +37,7 @@ public class Graph {
             if (node.getValue() == null)
                 sb.append("Node: " + node.getKey() + "\n");
             else
-                sb.append(node.getValue().toString() + "\n");
+                sb.append(node.getValue().toString());
         }
 
         return sb.toString();
@@ -47,10 +47,10 @@ public class Graph {
         String ipString = ip.getHostAddress();
         String nodeName = "";
 
-        for (Map.Entry<String, Vertex> entry: this.nodes.entrySet()){
-            if (ipString.equals(entry.getValue().getIp().getHostAddress()))
-                nodeName = entry.getKey();
-        }
+        //for (Map.Entry<String, Vertex> entry: this.nodes.entrySet()){
+        //    if (ipString.equals(entry.getValue().getIp().getHostAddress()))
+        //        nodeName = entry.getKey();
+        //}
 
         if (nodeName.equals(""))
             return null;
@@ -59,11 +59,13 @@ public class Graph {
     }
 
     public Map<String, InetAddress> getMyAdjacents(){
-        return getNodeAdjacents(this.me);
+        //return getNodeAdjacents(this.me);
+        return null;
     }
 
     public Map<String, InetAddress> getNodeAdjacents(String key){
         Vertex node = this.nodes.get(key);
+        /*
         Map<String, InetAddress> adjs = node.getAdjacents();
 
         Map<String, InetAddress> res = new HashMap<>();
@@ -72,7 +74,8 @@ public class Graph {
             res.put(tmp.getName(), tmp.getIp());
         }
 
-        return res;
+        return res;*/
+        return null;
     }
 
     public List<String> deleteNode(String name){
@@ -81,7 +84,7 @@ public class Graph {
 
         for (String adj: adjs){
             Vertex tmp = this.nodes.get(adj);
-            tmp.removeAdjacent(name);
+            //tmp.removeAdjacent(name);
         }
 
         this.nodes.remove(name);
@@ -91,14 +94,14 @@ public class Graph {
     public void buildGraphFromAdjs(Map<String, InetAddress> adjs){
         Map<String, Vertex> res = new HashMap<>();
 
-        try {
-            res.put(me, new Vertex(me, InetAddress.getLocalHost(), adjs));
-        } catch (UnknownHostException e) {
-            res.put(me, new Vertex(me, null, adjs));
-        }
+        //try {
+        //    res.put(me, null);//new Vertex(me, InetAddress.getLocalHost(), adjs));
+        //} catch (UnknownHostException e) {
+        //    res.put(me, null);//new Vertex(me, null, adjs));
+        //}
         
         for(Map.Entry<String, InetAddress> entry: adjs.entrySet()){
-            res.put(entry.getKey(), new Vertex(entry.getKey(), entry.getValue()));
+            res.put(entry.getKey(), null);//new Vertex(entry.getKey(), entry.getValue()));
         }
 
         this.nodes = res;

@@ -51,10 +51,11 @@ public class BStrapperClient extends Thread{
                 adjs.put(tokens[0], java.net.InetAddress.getByName(tokens[1]));
         }
 
-        Graph graph = new Graph(name);
-        graph.buildGraphFromAdjs(adjs);
-        System.out.println(graph);
-        return graph;
+        //Graph graph = new Graph(name);
+        //graph.buildGraphFromAdjs(adjs);
+        //System.out.println(graph);
+        //return graph;
+        return null;
     }
 
     public void run(){

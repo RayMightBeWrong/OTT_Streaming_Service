@@ -2,7 +2,10 @@ package overlay;
 
 import java.io.File;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -14,7 +17,7 @@ import org.w3c.dom.NodeList;
 
 public class ConfigParser {
     private File file;
-    public static String bstrapperName = "O1";
+    private String bstrapperName;
  
     public ConfigParser(String filepath){
         this.file = new File(filepath);
@@ -28,10 +31,12 @@ public class ConfigParser {
             doc.getDocumentElement().normalize();
 
             NodeList nodeList = doc.getElementsByTagName("nodes");
+            NodeList bStrapper = doc.getElementsByTagName("bootstrapper");
             NodeList nodes = doc.getElementsByTagName("node");
 
             Graph g = getAllOverlayNodes(nodeList);
-            readOverlayNodes(nodes, g);
+            this.bstrapperName = getBStrapperName(bStrapper);
+            readNodesAdjacents(nodes, g);
             return g;
         }
         catch (Exception e){
@@ -40,43 +45,65 @@ public class ConfigParser {
         }
     }
 
-    public Graph getAllOverlayNodes(NodeList nodeList){
+    public Graph getAllOverlayNodes(NodeList nodeList) throws UnknownHostException{
         Map<String, Vertex> graph = new HashMap<>();
         Element tmp = (Element) nodeList.item(0);
 
         NodeList entries = tmp.getElementsByTagName("entry");
         for(int i = 0; i < entries.getLength(); i++){
             Element entry = (Element) tmp.getElementsByTagName("entry").item(i);
-            graph.put(entry.getAttribute("n"), null);
+
+            String name = entry.getAttribute("n");
+            List<InetAddress> ipList = getIPList(entry);
+            Vertex v = new Vertex(name, ipList);
+            graph.put(name, v);
         }
 
-        return new Graph(graph, bstrapperName);
+        return new Graph(graph);
     }
 
-    public Vertex readNode(Element node){
+    public List<InetAddress> getIPList(Element node) throws UnknownHostException{
+        List<InetAddress> ipList = new ArrayList<>();
+
+        NodeList addresses = node.getElementsByTagName("address");
+            
+        for(int i = 0; i < addresses.getLength(); i++){
+            String ip = addresses.item(i).getTextContent();
+            ipList.add(InetAddress.getByName(ip));
+        }
+
+        return ipList;
+    }
+
+    public String getBStrapperName(NodeList bStrapper){
+        Element entry = (Element) bStrapper.item(0);
+        return entry.getAttribute("name");
+    }
+
+    public void readNodesAdjacents(NodeList nodes, Graph g){
+        for(int i = 0; i < nodes.getLength(); i++){
+            Element node = (Element) nodes.item(i);
+            String name = node.getAttribute("n");
+            Map<String, List<InetAddress>> adjs = readNodeAdjacents(node, g);
+            g.setAdjacentsInNode(name, adjs);
+        }
+    }
+
+    public Map<String, List<InetAddress>> readNodeAdjacents(Element node, Graph g){
         try{
             String name = node.getAttribute("n");
-            String ipName = node.getElementsByTagName("ip").item(0).getTextContent();
-            InetAddress ip = InetAddress.getByName(ipName);
 
-            Map<String, InetAddress> adjs = new HashMap<>();
+            Map<String, List<InetAddress>> adjs = new HashMap<>();
             NodeList adjacents = node.getElementsByTagName("adj");
             for(int i = 0; i < adjacents.getLength(); i++){
-                adjs.put(adjacents.item(i).getTextContent(), null);
+                String nodeName = adjacents.item(i).getTextContent();
+                adjs.put(adjacents.item(i).getTextContent(), g.getNodeIPList(nodeName));
             }
 
-            return new Vertex(name, ip, adjs);
+            return adjs;
         }
         catch (Exception e){
             return null;
-        }
-    }
-
-    public void readOverlayNodes(NodeList nodes, Graph g){
-        for(int i = 0; i < nodes.getLength(); i++){
-            Element node = (Element) nodes.item(i);
-            Vertex v = readNode(node);
-            g.addNode(v);
         }
     }
 }
