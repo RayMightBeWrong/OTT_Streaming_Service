@@ -3,6 +3,7 @@ package overlay;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetAddress;
+import java.util.List;
 import java.util.Map;
 
 public class MessageSender {
@@ -20,9 +21,9 @@ public class MessageSender {
 
     /*  BOOTSTRAPPER MESSAGES */
 
-    public void initialMessageBootstrapper(String nodeName, Map<String, InetAddress> adjs) throws IOException{
+    public void initialMessageBootstrapper(String nodeName, Map<String, List<InetAddress>> adjs, Map<String, Integer> adjsState) throws IOException{
         sendSelfNodeInfo(nodeName);
-        sendAdjacents(adjs);
+        sendAdjacents(adjs, adjsState);
         end();
     }
 
@@ -31,9 +32,20 @@ public class MessageSender {
         sendMessage(s);
     }
 
-    public void sendAdjacents(Map<String, InetAddress> adjs){
-        for(Map.Entry<String, InetAddress> entry: adjs.entrySet())
-            out.println(entry.getKey() + ": " + entry.getValue().getHostAddress());
+    public void sendAdjacents(Map<String, List<InetAddress>> adjs, Map<String, Integer> adjsState){
+        for(Map.Entry<String, List<InetAddress>> entry: adjs.entrySet()){
+            Integer state = adjsState.get(entry.getKey());
+
+            if (state == Vertex.OFF)
+                out.println("ADJ: " + entry.getKey() + ": OFF");
+                
+            else if (state == Vertex.ON)
+                out.println(entry.getKey() + ": ON");
+
+            for(InetAddress ip: entry.getValue())
+                out.println("Available at: " + ip.getHostAddress());
+        }
+
         out.flush();
     }
 
@@ -59,10 +71,5 @@ public class MessageSender {
 
     public void pingAck(){
         sendMessage("pingAck");
-    }
-
-    public void nodeClosed(String nodeName){
-        String s = "lost " + nodeName;
-        sendMessage(s);
     }
 }

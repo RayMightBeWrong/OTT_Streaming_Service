@@ -6,17 +6,15 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-public class BStrapperClient extends Thread{
-    private String bstrapper;
 
-    public BStrapperClient(String bstrapper){
-        this.bstrapper = bstrapper;
-    }
+public class BStrapperClient{
 
-    public static Graph readInitialMsg(String bstrapper){
+    public static NodeState readInitialMsg(String bstrapper){
         try {
             Socket socket = new Socket(InetAddress.getByName(bstrapper), BStrapper.PORT);
             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
@@ -24,10 +22,10 @@ public class BStrapperClient extends Thread{
             MessageSender sender = new MessageSender(out);
 
             sender.initialMessageClient();
-            Graph graph = getInitialMsg(in, socket);
-            socket.close();
+            NodeState state = getInitialMsg(in, socket);
+            //socket.close();
 
-            return graph;
+            return state;
         } 
         catch (Exception e) {
             e.printStackTrace();
@@ -35,10 +33,12 @@ public class BStrapperClient extends Thread{
         }
     }
 
-    public static Graph getInitialMsg(BufferedReader in, Socket socket) throws IOException{
+    public static NodeState getInitialMsg(BufferedReader in, Socket socket) throws IOException{
         String name = "";
-        Map<String, InetAddress> adjs = new HashMap<>();
+        Map<String, List<InetAddress>> adjs = new HashMap<>();
+        Map<String, Integer> adjsState = new HashMap<>();
 
+        String currentAdj = "";
         while(true){
             String s = in.readLine();
             if(s.equals("end"))
@@ -47,18 +47,26 @@ public class BStrapperClient extends Thread{
             String[] tokens = s.split(": ");
             if (tokens[0].equals("YOU"))
                 name = tokens[1];
-            else
-                adjs.put(tokens[0], java.net.InetAddress.getByName(tokens[1]));
+
+            if (tokens[0].equals("ADJ")){
+                currentAdj = tokens[1];
+                
+                if (tokens[2].equals("OFF"))
+                    adjsState.put(currentAdj, Vertex.OFF);
+                else if (tokens[2].equals("ON"))
+                    adjsState.put(currentAdj, Vertex.ON);
+
+                adjs.put(currentAdj, new ArrayList<>());
+            }
+
+            else if (tokens[0].equals("Available at")){
+                List<InetAddress> list = adjs.get(currentAdj);
+                list.add((InetAddress) InetAddress.getByName(tokens[1]));
+                adjs.put(currentAdj, list);
+            }
         }
 
-        //Graph graph = new Graph(name);
-        //graph.buildGraphFromAdjs(adjs);
-        //System.out.println(graph);
-        //return graph;
-        return null;
-    }
-
-    public void run(){
-
+        Vertex v = new Vertex(name, adjs, adjsState, Vertex.ON);
+        return new NodeState(v);
     }
 }

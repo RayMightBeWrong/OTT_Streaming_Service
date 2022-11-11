@@ -37,6 +37,7 @@ public class ConfigParser {
             Graph g = getAllOverlayNodes(nodeList);
             this.bstrapperName = getBStrapperName(bStrapper);
             readNodesAdjacents(nodes, g);
+            g.setNodeState(bstrapperName, Vertex.ON);
             return g;
         }
         catch (Exception e){
@@ -55,7 +56,7 @@ public class ConfigParser {
 
             String name = entry.getAttribute("n");
             List<InetAddress> ipList = getIPList(entry);
-            Vertex v = new Vertex(name, ipList);
+            Vertex v = new Vertex(name, ipList, Vertex.OFF);
             graph.put(name, v);
         }
 
@@ -91,8 +92,6 @@ public class ConfigParser {
 
     public Map<String, List<InetAddress>> readNodeAdjacents(Element node, Graph g){
         try{
-            String name = node.getAttribute("n");
-
             Map<String, List<InetAddress>> adjs = new HashMap<>();
             NodeList adjacents = node.getElementsByTagName("adj");
             for(int i = 0; i < adjacents.getLength(); i++){
