@@ -16,12 +16,13 @@ public class UDPServer extends Thread{
                 DatagramPacket packet = new DatagramPacket(buf, buf.length);
                 try {
                     socket.receive(packet);
+                    break;
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
 
-            //socket.close();
+            socket.close();
         } 
         catch (SocketException e) {
             e.printStackTrace();

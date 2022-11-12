@@ -21,7 +21,7 @@ public class BStrapperClient{
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             MessageSender sender = new MessageSender(out);
 
-            sender.initialMessageClient();
+            sender.hello();
             NodeState state = getInitialMsg(in, socket);
             //socket.close();
 
@@ -40,11 +40,11 @@ public class BStrapperClient{
 
         String currentAdj = "";
         while(true){
-            String s = in.readLine();
-            if(s.equals("end"))
+            String msg = in.readLine();
+            if(msg.equals("end"))
                 break;
 
-            String[] tokens = s.split(": ");
+            String[] tokens = msg.split(": ");
             if (tokens[0].equals("YOU"))
                 name = tokens[1];
 

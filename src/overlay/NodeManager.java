@@ -19,23 +19,14 @@ public class NodeManager {
         else if (args.length == 1){
             NodeState state = BStrapperClient.readInitialMsg(args[0]);
 
-            /*
-            Thread server = new Thread(new TCPServer(graph));
+            Thread server = new Thread(new TCPServer(state));
             server.start();
-
-            Map<String, InetAddress> adjs = graph.getMyAdjacents();
-            for (Map.Entry<String, InetAddress> adj: adjs.entrySet()){
-                Thread client = new Thread(new TCPClient(graph, adj.getValue()));
-                client.start();
-            }
-
-            
-
             try {
                 server.join();
             } catch (InterruptedException e) {
-                e.printStackTrace();
-            }*/
+                // e.printStackTrace();
+                // ignore
+            }
         }
     }
 }

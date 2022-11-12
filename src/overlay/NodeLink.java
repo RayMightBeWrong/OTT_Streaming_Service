@@ -7,9 +7,9 @@ public class NodeLink {
     private String viaNode;
     private InetAddress viaInterface;
     private int hops;
-    private double cost;
+    private long cost;
 
-    public NodeLink(String dest, String viaNode, InetAddress viaInterface, int hops, double cost){
+    public NodeLink(String dest, String viaNode, InetAddress viaInterface, int hops, long cost){
         this.dest = dest;
         this.viaNode = viaNode;
         this.viaInterface = viaInterface;
@@ -18,11 +18,23 @@ public class NodeLink {
     }
 
     // creating adjacent
-    public NodeLink(String dest, String viaNode){
+    public NodeLink(String dest, String viaNode, InetAddress viaInterface, long cost){
         this.dest = dest;
         this.viaNode = viaNode;
-        this.viaInterface = null;
+        this.viaInterface = viaInterface;
         this.hops = 1;
-        this.cost = -1;
+        this.cost = cost;
+    }
+
+    public String toString(){
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("\tDestination: " + this.dest + "\n");
+        sb.append("\t\tVia Node: " + this.viaNode + "\n");
+        sb.append("\t\tVia Interface: " + this.viaInterface + "\n");
+        sb.append("\t\tHops: " + this.hops + "\n");
+        sb.append("\t\tCost: " + this.cost + "\n");
+
+        return sb.toString();
     }
 }

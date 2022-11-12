@@ -12,8 +12,8 @@ public class Vertex {
     private Map<String, Integer> adjsState;
     private int state;
 
-    public static int ON = 1;
-    public static int OFF = 2;
+    public static final int ON = 1;
+    public static final int OFF = 2;
 
     public Vertex(String name, List<InetAddress> ips, int state){
         this.name = name;
@@ -43,6 +43,10 @@ public class Vertex {
         return this.adjacents;
     }
 
+    public Map<String, Integer> getAdjacentsState(){
+        return this.adjsState;
+    }
+
     public int getState(){
         return this.state;
     }
@@ -55,39 +59,73 @@ public class Vertex {
         this.state = state;
     }
 
-    /* 
-    public Map<String, Map<String, Double>> buildRoutesFromInitialAdjs(){
-        Map<String, Map<String, Double>> res = new HashMap<>();
-        
-        for(Map.Entry<String, InetAddress> adj: this.adjacents.entrySet()){
-            Map<String, Double> route = new HashMap<>();
-            route.put(adj.getKey(), 0.0);
-            res.put(adj.getKey(), route);
-        }
-
-        return res;
+    public int getAdjState(String key){
+        if (this.adjsState.containsKey(key))
+            return this.adjsState.get(key);
+        else
+            return 0;
     }
 
-    public void removeAdjacent(String nodeToRemove){
-        this.adjacents.remove(nodeToRemove);
-    }*/
+    public void setAdjState(String node, int state){
+        if (this.adjsState.containsKey(node))
+            this.adjsState.put(node, state);
+    }
+
+    public List<InetAddress> findAddressesFromNode(String key){
+        if (this.adjacents.containsKey(key))
+            return this.adjacents.get(key);
+        else
+            return null;
+    }
+
+    public String findNodeFromAddress(InetAddress ip){
+        String name = "";
+        boolean found = false;
+
+        for(Map.Entry<String, List<InetAddress>> entry: this.adjacents.entrySet()){
+            for(InetAddress address: entry.getValue()){
+                if (ip.equals(address)){
+                    name = entry.getKey();
+                    break;
+                }
+            }
+            if (found)
+                break;
+        }
+
+        return name;
+    }
 
     public String toString(){
         StringBuilder sb = new StringBuilder();
         
         sb.append("Node: " + this.name + "\n");
-        for (InetAddress ip: this.ipList)
-            sb.append("\tAvailable at: " + ip.getHostAddress() + "\n");
-
-        sb.append("\tAdjacents: ");
-        for (Map.Entry<String, List<InetAddress>> entry: this.adjacents.entrySet())
-            sb.append(entry.getKey() + " ");
-        sb.append("\n");
-
         if (this.state == OFF)
             sb.append("\tState: OFF\n");
         else
             sb.append("\tState: ON\n");
+
+        if (ipList != null){
+            for (InetAddress ip: this.ipList)
+                sb.append("\tAvailable at: " + ip.getHostAddress() + "\n");
+        }
+
+        if (adjacents != null){
+            sb.append("\tAdjacents: ");
+            for (Map.Entry<String, List<InetAddress>> entry: this.adjacents.entrySet())
+                sb.append(entry.getKey() + " ");
+            sb.append("\n");
+        }
+
+        if (adjsState != null){
+            sb.append("\tAdjacents' State:\n");
+            for (Map.Entry<String, Integer> entry: this.adjsState.entrySet()){
+                if (entry.getValue() == OFF)
+                    sb.append("\t" + entry.getKey() + ": OFF\n");
+                else
+                    sb.append("\t" + entry.getKey() + ": ON\n"); 
+            }
+        }
 
         return sb.toString();
     }

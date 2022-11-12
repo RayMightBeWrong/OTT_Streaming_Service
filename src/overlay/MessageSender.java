@@ -3,6 +3,7 @@ package overlay;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetAddress;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -40,7 +41,7 @@ public class MessageSender {
                 out.println("ADJ: " + entry.getKey() + ": OFF");
                 
             else if (state == Vertex.ON)
-                out.println(entry.getKey() + ": ON");
+                out.println("ADJ: " + entry.getKey() + ": ON");
 
             for(InetAddress ip: entry.getValue())
                 out.println("Available at: " + ip.getHostAddress());
@@ -53,7 +54,7 @@ public class MessageSender {
     
     /*  CLIENT MESSAGES */
 
-    public void initialMessageClient(){
+    public void hello(){
         sendMessage("hello");
     }
 
@@ -71,5 +72,14 @@ public class MessageSender {
 
     public void pingAck(){
         sendMessage("pingAck");
+    }
+
+    public void probe(){
+        String msg = "probe: " + LocalDateTime.now();
+        sendMessage(msg);
+    }
+
+    public void sendNewLinkToAdjacents(){
+        sendMessage("New Link");
     }
 }

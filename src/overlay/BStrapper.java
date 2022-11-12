@@ -12,7 +12,7 @@ import java.util.Map;
 
 public class BStrapper extends Thread{
     private Graph graph;
-    public static int PORT = 6666;
+    public static final int PORT = 6666;
 
     public BStrapper(Graph graph){
         this.graph = graph;
@@ -39,7 +39,7 @@ public class BStrapper extends Thread{
         
         while(true){
             String msg = in.readLine();
-            //System.out.println(msg);
+            System.out.println(msg);
 
             if (msg.equals("hello")){
                 String nodeName = this.graph.getNameFromIP(client.getInetAddress());

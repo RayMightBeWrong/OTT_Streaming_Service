@@ -5,17 +5,17 @@
 			<address>10.0.0.10</address>
 		</entry>
 		<entry n='O2'>
+			<address>192.168.56.1</address>
 			<address>127.0.0.1</address>
-			<address>10.0.1.1</address>
 			<address>10.0.4.1</address>
 		</entry>
 		<entry n='O3'>
-			<address>10.0.1.2</address>
+			<address>192.168.56.101</address>
 			<address>10.0.2.1</address>
 			<address>10.0.11.2</address>
 		</entry>
 		<entry n='O4'>
-			<address>10.0.12.21</address>
+			<address>192.168.56.102</address>
 		</entry>
 		<entry n='O5'>
 			<address>10.0.13.1</address>
@@ -54,13 +54,13 @@
 	</node>
 	<node n='O2'>
 		<adj>O3</adj>
-		<adj>O5</adj>
+		<adj>O4</adj>
 	</node>
 	<node n='O3'>
 		<adj>O2</adj>
 	</node>
 	<node n='O4'>
-		<adj>O3</adj>
+		<adj>O2</adj>
 	</node>
 	<node n='O5'>
 		<adj>O3</adj>
