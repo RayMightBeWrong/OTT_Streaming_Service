@@ -16,6 +16,10 @@ public class DistancesTable {
         this.table.put(dest, link);
     }
 
+    public NodeLink getLinkTo(String key){
+        return this.table.get(key);
+    }
+
     public String toString(){
         StringBuilder sb = new StringBuilder();
 

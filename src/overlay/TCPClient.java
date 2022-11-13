@@ -11,15 +11,25 @@ public class TCPClient extends Thread{
     private NodeState state;
     private InetAddress neighbor;
     private int behaviour;
+    
+    private Object extraInfo;
 
     public static final int HELLO = 1;
     public static final int PROBE = 2;
     public static final int SEND_NEW_LINK = 3;
+    public static final int SEND_TOPOLOGY = 4;
 
     public TCPClient(NodeState state, InetAddress neighbor, int behaviour){
         this.state = state;
         this.neighbor = neighbor;
         this.behaviour = behaviour;
+    }
+
+    public TCPClient(NodeState state, InetAddress neighbor, int behaviour, Object extraInfo){
+        this.state = state;
+        this.neighbor = neighbor;
+        this.behaviour = behaviour;
+        this.extraInfo = extraInfo;
     }
 
     public void run(){
@@ -38,6 +48,9 @@ public class TCPClient extends Thread{
 
                 case SEND_NEW_LINK:
                     sendNewLinkBehaviour(sender); break;
+                
+                case SEND_TOPOLOGY:
+                    sendTopologyBehaviour(sender); break;
             }
 
             socket.close();
@@ -49,24 +62,6 @@ public class TCPClient extends Thread{
 
     public void helloBehaviour(MessageSender sender, BufferedReader in) throws IOException{
         sender.hello();
-
-        while(true){
-            String msg = in.readLine();
-            System.out.println("C: " + msg);
-
-            if(msg.equals("end"))
-                break;
-            /*
-            if(isProbe(msg)){
-                LocalDateTime timestamp = getTimestampFromProbe(msg);
-                LocalDateTime now = LocalDateTime.now();
-                Duration duration = Duration.between(timestamp, now);
-
-                String nodeName = this.state.findAdjNodeFromAddress(this.neighbor);
-                this.state.addLink(nodeName, nodeName, this.neighbor, duration.toNanos());
-                System.out.println(this.state.toString());
-            }*/
-        }
     }
 
     public void probeBehaviour(MessageSender sender){
@@ -74,6 +69,11 @@ public class TCPClient extends Thread{
     }
 
     public void sendNewLinkBehaviour(MessageSender sender){
+        NodeLink link = this.state.getLinkTo((String) extraInfo);
+        sender.sendNewLink(link);
+    }
+
+    public void sendTopologyBehaviour(MessageSender sender){
         sender.sendMessage("bruh");
     }
 }

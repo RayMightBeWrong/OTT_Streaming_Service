@@ -26,6 +26,26 @@ public class NodeLink {
         this.cost = cost;
     }
 
+    public String getDest(){
+        return this.dest;
+    }
+
+    public String getViaNode(){
+        return this.viaNode;
+    }
+
+    public InetAddress getViaInterface(){
+        return this.viaInterface;
+    }
+
+    public int getHops(){
+        return this.hops;
+    }
+
+    public long getCost(){
+        return this.cost;
+    }
+
     public String toString(){
         StringBuilder sb = new StringBuilder();
 

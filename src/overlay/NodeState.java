@@ -56,6 +56,10 @@ public class NodeState {
         return this.node.findNodeFromAddress(ip);
     }
 
+    public NodeLink getLinkTo(String key){
+        return this.table.getLinkTo(key);
+    }
+
     public String toString(){
         StringBuilder sb = new StringBuilder();
         

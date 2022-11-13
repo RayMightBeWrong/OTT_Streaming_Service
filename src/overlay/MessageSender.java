@@ -60,7 +60,7 @@ public class MessageSender {
 
 
 
-    /*  MESSAGES SENT BY ALL*/
+    /*  MESSAGES SENT BY ALL */
 
     public void end(){
         sendMessage("end");
@@ -79,7 +79,12 @@ public class MessageSender {
         sendMessage(msg);
     }
 
-    public void sendNewLinkToAdjacents(){
-        sendMessage("New Link");
+    public void sendNewLink(NodeLink link){
+        sendMessage("new link: " + link.getDest());
+        sendMessage("via node: " + link.getViaNode());
+        sendMessage("via interface: " + link.getViaInterface().getHostAddress());
+        sendMessage("hops: " + link.getHops());
+        sendMessage("cost: " + link.getCost());
+        end();
     }
 }
