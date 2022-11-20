@@ -1,6 +1,7 @@
 package overlay;
 
 import java.net.InetAddress;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,6 +16,7 @@ public class Vertex {
     public static final int ON = 1;
     public static final int OFF = 2;
 
+    // Graph vertex
     public Vertex(String name, List<InetAddress> ips, int state){
         this.name = name;
         this.ipList = ips;
@@ -23,6 +25,7 @@ public class Vertex {
         this.state = state;
     }
 
+    // NodeState vertex
     public Vertex(String name, Map<String, List<InetAddress>> adjacents, Map<String, Integer> adjsState, int state){
         this.name = name;
         this.ipList = null;
@@ -128,5 +131,29 @@ public class Vertex {
         }
 
         return sb.toString();
+    }
+
+    public Vertex cloneGraphVertex(){
+        List<InetAddress> ips = new ArrayList<>();
+        for(InetAddress ip: this.ipList)
+            ips.add(ip);
+
+        return new Vertex(this.name, ips, this.state);
+    }
+
+    public Vertex cloneNodeStateVertex(){
+        Map<String, List<InetAddress>> clonedAdjs = new HashMap<>();
+        for(Map.Entry<String, List<InetAddress>> entry: this.adjacents.entrySet()){
+            List<InetAddress> ips = new ArrayList<>();
+            for(InetAddress ip: entry.getValue())
+                ips.add(ip);
+            clonedAdjs.put(entry.getKey(), ips);
+        }
+
+        Map<String, Integer> clonedAdjsState = new HashMap<>();
+        for(Map.Entry<String, Integer> entry: this.adjsState.entrySet())
+            clonedAdjsState.put(entry.getKey(), entry.getValue());
+
+        return new Vertex(this.name, clonedAdjs, clonedAdjsState, state);
     }
 }

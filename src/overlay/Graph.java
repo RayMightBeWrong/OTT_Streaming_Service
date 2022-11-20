@@ -72,6 +72,13 @@ public class Graph {
         return states;
     }
 
+    public NodeState graphToNodeState(String self){
+        Map<String, List<InetAddress>> adjs = getNodeAdjacents(self);
+        Map<String, Integer> adjsState = getNodeAdjacentsState(self);
+        Vertex v = new Vertex(self, adjs, adjsState, Vertex.ON);
+        return new NodeState(v);
+    }
+
     public String toString(){
         StringBuilder sb = new StringBuilder();
 

@@ -1,8 +1,5 @@
 package overlay;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
@@ -17,7 +14,7 @@ public class TCPClient extends Thread{
     public static final int HELLO = 1;
     public static final int PROBE = 2;
     public static final int SEND_NEW_LINK = 3;
-    public static final int SEND_TOPOLOGY = 4;
+    public static final int SEND_ROUTES = 4;
 
     public TCPClient(NodeState state, InetAddress neighbor, int behaviour){
         this.state = state;
@@ -36,21 +33,22 @@ public class TCPClient extends Thread{
         try {
             Socket socket = new Socket(this.neighbor, TCPServer.PORT);
             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             MessageSender sender = new MessageSender(out);
 
             switch(this.behaviour){
                 case HELLO:
-                    helloBehaviour(sender, in); break;
+                    sender.hello(); break;
 
                 case PROBE:
-                    probeBehaviour(sender); break;
+                    sender.probe(); break;
 
                 case SEND_NEW_LINK:
-                    sendNewLinkBehaviour(sender); break;
+                    NodeLink link = this.state.getLinkTo((String) extraInfo);
+                    sender.sendNewLink(link, this.state.getSelf());
+                    break;
                 
-                case SEND_TOPOLOGY:
-                    sendTopologyBehaviour(sender); break;
+                case SEND_ROUTES:
+                    sender.sendRoutes(this.state, (String) extraInfo); break;
             }
 
             socket.close();
@@ -58,22 +56,5 @@ public class TCPClient extends Thread{
         } catch (Exception e) {
             e.printStackTrace();
         } 
-    }
-
-    public void helloBehaviour(MessageSender sender, BufferedReader in) throws IOException{
-        sender.hello();
-    }
-
-    public void probeBehaviour(MessageSender sender){
-        sender.probe();
-    }
-
-    public void sendNewLinkBehaviour(MessageSender sender){
-        NodeLink link = this.state.getLinkTo((String) extraInfo);
-        sender.sendNewLink(link);
-    }
-
-    public void sendTopologyBehaviour(MessageSender sender){
-        sender.sendMessage("bruh");
     }
 }

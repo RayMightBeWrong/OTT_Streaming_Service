@@ -9,6 +9,8 @@ public class NodeLink {
     private int hops;
     private long cost;
 
+    public NodeLink(){}
+
     public NodeLink(String dest, String viaNode, InetAddress viaInterface, int hops, long cost){
         this.dest = dest;
         this.viaNode = viaNode;

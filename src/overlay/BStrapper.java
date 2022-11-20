@@ -39,7 +39,7 @@ public class BStrapper extends Thread{
         
         while(true){
             String msg = in.readLine();
-            System.out.println(msg);
+            System.out.println("B: " + msg);
 
             if (msg.equals("hello")){
                 String nodeName = this.graph.getNameFromIP(client.getInetAddress());

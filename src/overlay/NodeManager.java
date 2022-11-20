@@ -10,6 +10,10 @@ public class NodeManager {
             Thread bstrapper = new Thread(new BStrapper(graph));
             bstrapper.start();
 
+            NodeState state = graph.graphToNodeState(parser.getBootstrapperName());
+            Thread server = new Thread(new TCPServer(state));
+            server.start();
+
             try {
                 bstrapper.join();
             } catch (InterruptedException e) {

@@ -23,6 +23,10 @@ public class ConfigParser {
         this.file = new File(filepath);
     }
 
+    public String getBootstrapperName(){
+        return this.bstrapperName;
+    }
+
     public Graph parseXML(){
         try{
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();

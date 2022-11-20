@@ -42,7 +42,7 @@ public class TCPServer extends Thread{
             String msg = in.readLine();
             System.out.println("S: " + msg);
 
-            if (msg.equals("hello")){
+            if (isHello(msg)){
                 readHello(client, msg); break;
             }
             else if (isProbe(msg)){
@@ -51,8 +51,9 @@ public class TCPServer extends Thread{
             else if (isNewLink(msg)){
                 readNewLink(client, in, msg); break;
             }
-            else
-                break;
+            else if (isRoutes(msg)){
+                readRoutes(in, msg); break;
+            }
         }
 
         client.close();
@@ -69,7 +70,6 @@ public class TCPServer extends Thread{
         }
         sendProbes(nodeName);
     }
-
     
     public void readProbe(Socket client, String msg) throws InterruptedException{
         LocalDateTime now = LocalDateTime.now();
@@ -80,16 +80,77 @@ public class TCPServer extends Thread{
         this.state.addLink(nodeName, nodeName, client.getInetAddress(), duration.toNanos());
 
         sendNewLinkToAdjacents(nodeName);
-        sendTopologyToNewAdj(nodeName);
+        sendRoutesToNewAdj(nodeName);
     }
 
     public void readNewLink(Socket client, BufferedReader in, String msg) throws IOException{
-        System.out.println(getNewLinkDest(msg));
+        String name = getNewLinkDest(msg);
+        String viaNode = "";
+        InetAddress viaInterface = null;
+        int hops = 0;
+        long cost = 0;
+
         while(true){
             msg = in.readLine();
-            System.out.println(msg);
 
-            if (msg.equals("end"))
+            if (isPrefixOf(msg, "via node")){
+                viaNode = getSuffixFromPrefix(msg, "via node: ");
+            }
+            else if (isPrefixOf(msg, "hops")){
+                String hopsString = getSuffixFromPrefix(msg, "hops: ");
+                hops = Integer.parseInt(hopsString) + 1;
+            }
+            else if (isPrefixOf(msg, "cost")){
+                String costString = getSuffixFromPrefix(msg, "cost: ");
+                cost = Long.parseLong(costString);
+                NodeLink adj = this.state.getLinkTo(viaNode);
+                cost += adj.getCost();
+            }
+            else if (isEnd(msg)){
+                List<InetAddress> ips = this.state.findAddressesFromAdjNode(viaNode);
+                viaInterface = ips.get(0);
+                NodeLink newLink = new NodeLink(name, viaNode, viaInterface, hops, cost);
+                if(this.state.isLinkBetter(name, newLink))
+                    this.state.addLink(name, newLink);
+                break;
+            }
+        }
+    }
+
+    public void readRoutes(BufferedReader in, String msg) throws IOException{
+        String dest = "";
+        String viaNode = "";
+        InetAddress viaInterface = null;
+        int hops = 0;
+        long cost = 0;
+
+        while(true){
+            msg = in.readLine();
+
+            if (isPrefixOf(msg, "link to")){
+                dest = getSuffixFromPrefix(msg, "link to: ");
+            }
+            else if (isPrefixOf(msg, "via node")){
+                viaNode = getSuffixFromPrefix(msg, "via node: ");
+            }
+            else if (isPrefixOf(msg, "hops")){
+                String hopsString = getSuffixFromPrefix(msg, "hops: ");
+                hops = Integer.parseInt(hopsString) + 1;
+            }
+            else if (isPrefixOf(msg, "cost")){
+                String costString = getSuffixFromPrefix(msg, "cost: ");
+                cost = Long.parseLong(costString);
+                NodeLink adj = this.state.getLinkTo(viaNode);
+                cost += adj.getCost();
+            }
+            else if (isPrefixOf(msg, "route done")){
+                List<InetAddress> ips = this.state.findAddressesFromAdjNode(viaNode);
+                viaInterface = ips.get(0);
+                NodeLink newLink = new NodeLink(dest, viaNode, viaInterface, hops, cost);
+                if(this.state.isLinkBetter(dest, newLink))
+                    this.state.addLink(dest, newLink);
+            }
+            else if (isEnd(msg))
                 break;
         }
     }
@@ -144,10 +205,10 @@ public class TCPServer extends Thread{
         }
     }
 
-    public void sendTopologyToNewAdj(String fromNode) throws InterruptedException{
+    public void sendRoutesToNewAdj(String fromNode) throws InterruptedException{
         List<InetAddress> ips = this.state.findAddressesFromAdjNode(fromNode);
 
-        Thread client = new Thread(new TCPClient(this.state, ips.get(0), TCPClient.SEND_TOPOLOGY));
+        Thread client = new Thread(new TCPClient(this.state, ips.get(0), TCPClient.SEND_ROUTES, fromNode));
         client.start();
         client.join();
     }
@@ -161,11 +222,15 @@ public class TCPServer extends Thread{
         char[] msgv = msg.toCharArray();
         char[] pv = prefix.toCharArray();
 
-        for(int i = 0; i < pv.length && res; i++)
+        for(int i = 0; i < pv.length && i < msgv.length && res; i++)
             if (pv[i] != msgv[i])
                 res = false;
 
         return res;
+    }
+
+    public boolean isHello(String msg){
+        return isPrefixOf(msg, "hello");
     }
 
     public boolean isProbe(String msg){
@@ -175,6 +240,19 @@ public class TCPServer extends Thread{
     public boolean isNewLink(String msg){
         return isPrefixOf(msg, "new link");
     }
+
+    public boolean isRoutes(String msg){
+        return isPrefixOf(msg, "routes from");
+    }
+
+    public boolean isEnd(String msg){
+        return isPrefixOf(msg, "end");
+    }
+
+
+
+
+
 
     public String getSuffixFromPrefix(String msg, String prefix){
         StringBuilder sb = new StringBuilder();
@@ -187,13 +265,8 @@ public class TCPServer extends Thread{
     }
 
     public LocalDateTime getTimestampFromProbe(String msg){
-        StringBuilder sb = new StringBuilder();
-
-        char[] ch = msg.toCharArray();
-        for(int i = 7; i < ch.length; i++)
-            sb.append(ch[i]);
-        
-        return LocalDateTime.parse(sb.toString());
+        String probe = getSuffixFromPrefix(msg, "probe: ");
+        return LocalDateTime.parse(probe);
     }
 
     public String getNewLinkDest(String msg){

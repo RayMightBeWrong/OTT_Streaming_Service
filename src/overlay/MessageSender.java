@@ -79,12 +79,29 @@ public class MessageSender {
         sendMessage(msg);
     }
 
-    public void sendNewLink(NodeLink link){
+    public void sendNewLink(NodeLink link, String self){
         sendMessage("new link: " + link.getDest());
-        sendMessage("via node: " + link.getViaNode());
-        sendMessage("via interface: " + link.getViaInterface().getHostAddress());
+        sendMessage("via node: " + self);
         sendMessage("hops: " + link.getHops());
         sendMessage("cost: " + link.getCost());
+        end();
+    }
+
+    public void sendRoutes(NodeState state, String receptor){
+        sendMessage("routes from: " + state.getSelf());
+        
+        Map<String, NodeLink> table = state.getTable().getTable();
+        for(Map.Entry<String, NodeLink> entry: table.entrySet()){
+            if (!receptor.equals(entry.getKey())){
+                NodeLink link = entry.getValue();
+                sendMessage("link to: " + link.getDest());
+                sendMessage("via node: " + state.getSelf());
+                sendMessage("hops: " + link.getHops());
+                sendMessage("cost: " + link.getCost());
+                sendMessage("route done");
+            }
+        }
+
         end();
     }
 }

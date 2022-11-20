@@ -16,6 +16,24 @@ public class NodeState {
         this.lock = new ReentrantLock();
     }
 
+    public DistancesTable getTable(){
+        return this.table;
+    }
+
+    public String getSelf(){
+        return this.node.getName();
+    }
+
+    public void addLink(String dest, NodeLink newLink){
+        this.lock.lock();
+        try{
+            this.table.addLink(dest, newLink);
+        }
+        finally{
+            this.lock.unlock();
+        }
+    }
+
     public void addLink(String dest, String viaNode, InetAddress viaInterface, long cost){
         this.lock.lock();
         try{
@@ -58,6 +76,10 @@ public class NodeState {
 
     public NodeLink getLinkTo(String key){
         return this.table.getLinkTo(key);
+    }
+
+    public boolean isLinkBetter(String key, NodeLink newLink){
+        return this.table.isLinkBetter(key, newLink);
     }
 
     public String toString(){

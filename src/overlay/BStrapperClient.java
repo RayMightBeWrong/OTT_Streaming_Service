@@ -23,7 +23,7 @@ public class BStrapperClient{
 
             sender.hello();
             NodeState state = getInitialMsg(in, socket);
-            //socket.close();
+            socket.close();
 
             return state;
         } 

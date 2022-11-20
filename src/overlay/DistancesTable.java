@@ -11,6 +11,14 @@ public class DistancesTable {
         this.table = new HashMap<>();
     }
 
+    public Map<String, NodeLink> getTable(){
+        return this.table;
+    }
+
+    public void addLink(String dest, NodeLink newLink){
+        this.table.put(dest, newLink);
+    }
+
     public void addLink(String dest, String viaNode, InetAddress viaInterface, long cost){
         NodeLink link = new NodeLink(dest, viaNode, viaInterface, cost);
         this.table.put(dest, link);
@@ -18,6 +26,13 @@ public class DistancesTable {
 
     public NodeLink getLinkTo(String key){
         return this.table.get(key);
+    }
+
+    public boolean isLinkBetter(String key, NodeLink nodeLink){
+        if (!table.containsKey(key))
+            return true;
+        else
+            return false;
     }
 
     public String toString(){
