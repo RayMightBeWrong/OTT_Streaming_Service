@@ -78,8 +78,8 @@ public class NodeState {
         return this.table.getLinkTo(key);
     }
 
-    public boolean isLinkBetter(String key, NodeLink newLink){
-        return this.table.isLinkBetter(key, newLink);
+    public boolean isLinkModified(String key, NodeLink newLink){
+        return this.table.isLinkModified(key, newLink);
     }
 
     public String toString(){

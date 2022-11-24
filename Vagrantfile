@@ -17,7 +17,7 @@
 #You should only need change the first two/three variables in this file
 
 #Variables
-Number_VMs = 4 #number VMs to launch
+Number_VMs = 6 #number VMs to launch
 IP_RANGE= "192.168.56" #Change me if needed!
 PUBLIC_KEY_PATH = "~/.ssh/id_rsa.pub" #Change me if needed!
 READ_PUBLIC_KEY = File.read(File.expand_path(PUBLIC_KEY_PATH)).strip

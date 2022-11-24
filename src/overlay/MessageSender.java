@@ -62,20 +62,13 @@ public class MessageSender {
 
     /*  MESSAGES SENT BY ALL */
 
-    public void end(){
-        sendMessage("end");
-    }
-
-    public void ping(){
-        sendMessage("ping");
-    }
-
-    public void pingAck(){
-        sendMessage("pingAck");
-    }
-
-    public void probe(){
-        String msg = "probe: " + LocalDateTime.now();
+    public void probe(boolean initial){
+        String msg;
+        if(initial)
+            msg = "probe: initial: " + LocalDateTime.now();
+        else
+            msg = "probe: regular: " + LocalDateTime.now();
+        
         sendMessage(msg);
     }
 
@@ -103,5 +96,15 @@ public class MessageSender {
         }
 
         end();
+    }
+
+    public void sendMonitoringMessage(NodeState state){
+        sendMessage("monitoring: " + state.getSelf());
+        probe(false);
+        end();
+    }
+
+    public void end(){
+        sendMessage("end");
     }
 }

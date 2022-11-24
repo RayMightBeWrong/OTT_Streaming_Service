@@ -28,11 +28,24 @@ public class DistancesTable {
         return this.table.get(key);
     }
 
-    public boolean isLinkBetter(String key, NodeLink nodeLink){
+    public boolean isLinkModified(String key, NodeLink newLink){
         if (!table.containsKey(key))
             return true;
-        else
-            return false;
+
+        NodeLink oldLink = table.get(key);
+        if (oldLink.getViaNode().equals(newLink.getViaNode())){
+            Long diff = Math.abs(oldLink.getCost() - newLink.getCost());
+            double diffPercentage = diff / (oldLink.getCost() * 1.0);
+
+            if (diffPercentage > 0.2)
+                return true;
+        }
+        else {
+            if (oldLink.getCost() > newLink.getCost())
+                return true;
+        }
+
+        return false;
     }
 
     public String toString(){

@@ -1,7 +1,6 @@
 package overlay;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -10,14 +9,20 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
 
-public class TCPServer extends Thread{
+public class TCPServer {
     private NodeState state;
+    private int nodeType;
 
     public static final int PORT = 6667;
 
-    public TCPServer(NodeState state){
+    public static final int NORMAL_NODE = 1;
+    public static final int SERVER_NODE = 2;
+
+    public TCPServer(NodeState state, int nodeType){
         this.state = state;
+        this.nodeType = nodeType;
     }
 
     public void run(){
@@ -25,6 +30,10 @@ public class TCPServer extends Thread{
             ServerSocket server = new ServerSocket(PORT);
 
             startInitialClientThreads();
+
+            if (this.nodeType == SERVER_NODE){
+                startMonitoring();
+            }
 
             while(true){
                 Socket client = server.accept();
@@ -54,6 +63,9 @@ public class TCPServer extends Thread{
             else if (isRoutes(msg)){
                 readRoutes(in, msg); break;
             }
+            else if (isMonitoring(msg)){
+                readMonitoring(client, in, msg); break;
+            }
         }
 
         client.close();
@@ -68,22 +80,31 @@ public class TCPServer extends Thread{
             this.state.setAdjState(nodeName, Vertex.ON);
             startInitialClientThread(nodeName);
         }
-        sendProbes(nodeName);
+        sendProbe(nodeName, true);
     }
     
     public void readProbe(Socket client, String msg) throws InterruptedException{
+        boolean initialMsg = isProbeInitial(msg);
+
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime timestamp = getTimestampFromProbe(msg);
+        LocalDateTime timestamp = getTimestampFromProbe(msg, initialMsg);
         Duration duration = Duration.between(timestamp, now);
 
         String nodeName = this.state.findAdjNodeFromAddress(client.getInetAddress());
-        this.state.addLink(nodeName, nodeName, client.getInetAddress(), duration.toNanos());
+        NodeLink link = new NodeLink(nodeName, nodeName, client.getInetAddress(), Math.abs(duration.toNanos()));
+        if(this.state.isLinkModified(nodeName, link)){
+            this.state.addLink(nodeName, link);
+            sendNewLinkToAdjacents(nodeName);
 
-        sendNewLinkToAdjacents(nodeName);
-        sendRoutesToNewAdj(nodeName);
+            System.out.println("\n__________________________________________________\n\nESTADO");
+            System.out.println(this.state.toString());
+            System.out.println("__________________________________________________");
+        }
+        if(initialMsg)
+            sendRoutesToNewAdj(nodeName);
     }
 
-    public void readNewLink(Socket client, BufferedReader in, String msg) throws IOException{
+    public void readNewLink(Socket client, BufferedReader in, String msg) throws Exception{
         String name = getNewLinkDest(msg);
         String viaNode = "";
         InetAddress viaInterface = null;
@@ -110,14 +131,23 @@ public class TCPServer extends Thread{
                 List<InetAddress> ips = this.state.findAddressesFromAdjNode(viaNode);
                 viaInterface = ips.get(0);
                 NodeLink newLink = new NodeLink(name, viaNode, viaInterface, hops, cost);
-                if(this.state.isLinkBetter(name, newLink))
+                if(this.state.isLinkModified(name, newLink)){
                     this.state.addLink(name, newLink);
+                    sendNewLinkToAdjacents(name, viaNode);
+
+                    System.out.println("\n__________________________________________________\n\nESTADO");
+                    System.out.println(this.state.toString());
+                    System.out.println("__________________________________________________");
+                }
+                else
+                    System.out.println("new link refused");
+
                 break;
             }
         }
     }
 
-    public void readRoutes(BufferedReader in, String msg) throws IOException{
+    public void readRoutes(BufferedReader in, String msg) throws Exception{
         String dest = "";
         String viaNode = "";
         InetAddress viaInterface = null;
@@ -147,8 +177,29 @@ public class TCPServer extends Thread{
                 List<InetAddress> ips = this.state.findAddressesFromAdjNode(viaNode);
                 viaInterface = ips.get(0);
                 NodeLink newLink = new NodeLink(dest, viaNode, viaInterface, hops, cost);
-                if(this.state.isLinkBetter(dest, newLink))
+                if(this.state.isLinkModified(dest, newLink)){
                     this.state.addLink(dest, newLink);
+                    sendNewLinkToAdjacents(dest, viaNode);
+                }
+            }
+            else if (isEnd(msg))
+                break;
+        }
+
+        System.out.println("\n__________________________________________________\n\nESTADO");
+        System.out.println(this.state.toString());
+        System.out.println("__________________________________________________");
+    }
+
+    public void readMonitoring(Socket client, BufferedReader in, String msg) throws Exception{
+        String fromNode = getSuffixFromPrefix(msg, "monitoring: ");
+        sendProbe(fromNode, false);
+
+        while(true){
+            msg = in.readLine();
+            
+            if(isProbe(msg)){
+                readProbe(client, msg);
             }
             else if (isEnd(msg))
                 break;
@@ -181,10 +232,20 @@ public class TCPServer extends Thread{
         client.join();
     }
 
-    public void sendProbes(String key) throws InterruptedException{
+    public void startMonitoring(){
+        Timer timer = new Timer();
+        timer.schedule(new TCPMonitorClient(state), 0, 3000);
+    }
+
+    public void sendProbe(String key, boolean initial) throws InterruptedException{
         List<InetAddress> ips = this.state.findAddressesFromAdjNode(key);
 
-        Thread client = new Thread(new TCPClient(this.state, ips.get(0), TCPClient.PROBE));
+        Thread client;
+        if (initial)
+            client = new Thread(new TCPClient(this.state, ips.get(0), TCPClient.PROBE_INITIAL));
+        else
+            client = new Thread(new TCPClient(this.state, ips.get(0), TCPClient.PROBE_REGULAR));
+
         client.start();
         client.join();
     }
@@ -196,6 +257,22 @@ public class TCPServer extends Thread{
         for(Map.Entry<String, Integer> entry: adjsState.entrySet()){
             if (entry.getValue() == Vertex.ON){
                 if(!entry.getKey().equals(fromNode)){
+                    List<InetAddress> ips = adjs.get(entry.getKey());
+                    Thread client = new Thread(new TCPClient(this.state, ips.get(0), TCPClient.SEND_NEW_LINK, fromNode));
+                    client.start();
+                    client.join();
+                }
+            }
+        }
+    }
+
+    public void sendNewLinkToAdjacents(String fromNode, String viaNode) throws InterruptedException{
+        Map<String, Integer> adjsState = this.state.getNodeAdjacentsState();
+        Map<String, List<InetAddress>> adjs = this.state.getNodeAdjacents();
+
+        for(Map.Entry<String, Integer> entry: adjsState.entrySet()){
+            if (entry.getValue() == Vertex.ON){
+                if(!entry.getKey().equals(fromNode) && !entry.getKey().equals(viaNode)){
                     List<InetAddress> ips = adjs.get(entry.getKey());
                     Thread client = new Thread(new TCPClient(this.state, ips.get(0), TCPClient.SEND_NEW_LINK, fromNode));
                     client.start();
@@ -237,12 +314,20 @@ public class TCPServer extends Thread{
         return isPrefixOf(msg, "probe");
     }
 
+    public boolean isProbeInitial(String msg){
+        return isPrefixOf(msg, "probe: initial");
+    }
+
     public boolean isNewLink(String msg){
         return isPrefixOf(msg, "new link");
     }
 
     public boolean isRoutes(String msg){
         return isPrefixOf(msg, "routes from");
+    }
+
+    public boolean isMonitoring(String msg){
+        return isPrefixOf(msg, "monitoring");
     }
 
     public boolean isEnd(String msg){
@@ -264,8 +349,14 @@ public class TCPServer extends Thread{
         return sb.toString();
     }
 
-    public LocalDateTime getTimestampFromProbe(String msg){
-        String probe = getSuffixFromPrefix(msg, "probe: ");
+    public LocalDateTime getTimestampFromProbe(String msg, boolean initial){
+        String probe;
+
+        if (initial)
+            probe = getSuffixFromPrefix(msg, "probe: initial: ");
+        else
+            probe = getSuffixFromPrefix(msg, "probe: regular: ");
+
         return LocalDateTime.parse(probe);
     }
 

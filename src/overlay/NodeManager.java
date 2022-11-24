@@ -11,8 +11,9 @@ public class NodeManager {
             bstrapper.start();
 
             NodeState state = graph.graphToNodeState(parser.getBootstrapperName());
-            Thread server = new Thread(new TCPServer(state));
-            server.start();
+
+            TCPServer server = new TCPServer(state, TCPServer.SERVER_NODE);
+            server.run();
 
             try {
                 bstrapper.join();
@@ -23,14 +24,8 @@ public class NodeManager {
         else if (args.length == 1){
             NodeState state = BStrapperClient.readInitialMsg(args[0]);
 
-            Thread server = new Thread(new TCPServer(state));
-            server.start();
-            try {
-                server.join();
-            } catch (InterruptedException e) {
-                // e.printStackTrace();
-                // ignore
-            }
+            TCPServer server = new TCPServer(state, TCPServer.NORMAL_NODE);
+            server.run();
         }
     }
 }

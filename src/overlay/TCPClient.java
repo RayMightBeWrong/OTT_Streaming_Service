@@ -4,6 +4,7 @@ import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
 
+
 public class TCPClient extends Thread{
     private NodeState state;
     private InetAddress neighbor;
@@ -12,9 +13,11 @@ public class TCPClient extends Thread{
     private Object extraInfo;
 
     public static final int HELLO = 1;
-    public static final int PROBE = 2;
-    public static final int SEND_NEW_LINK = 3;
-    public static final int SEND_ROUTES = 4;
+    public static final int PROBE_INITIAL = 2;
+    public static final int PROBE_REGULAR = 3;
+    public static final int SEND_NEW_LINK = 4;
+    public static final int SEND_ROUTES = 5;
+    public static final int MONITORING = 6;
 
     public TCPClient(NodeState state, InetAddress neighbor, int behaviour){
         this.state = state;
@@ -39,8 +42,11 @@ public class TCPClient extends Thread{
                 case HELLO:
                     sender.hello(); break;
 
-                case PROBE:
-                    sender.probe(); break;
+                case PROBE_INITIAL:
+                    sender.probe(true); break;
+
+                case PROBE_REGULAR:
+                    sender.probe(false); break;
 
                 case SEND_NEW_LINK:
                     NodeLink link = this.state.getLinkTo((String) extraInfo);
@@ -49,12 +55,15 @@ public class TCPClient extends Thread{
                 
                 case SEND_ROUTES:
                     sender.sendRoutes(this.state, (String) extraInfo); break;
+
+                case MONITORING:
+                    sender.sendMonitoringMessage(this.state); break;
             }
 
             socket.close();
 
         } catch (Exception e) {
-            e.printStackTrace();
-        } 
+            System.out.println("Connection refused with " + neighbor);
+        }
     }
 }
