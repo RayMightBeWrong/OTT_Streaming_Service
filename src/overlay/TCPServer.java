@@ -66,6 +66,12 @@ public class TCPServer {
             else if (isMonitoring(msg)){
                 readMonitoring(client, in, msg); break;
             }
+            else if (isStreamClient(msg)){
+                sendStreamRequest(); break;
+            }
+            else if (isAskStreaming(msg)){
+                readAskStreaming(in, msg); break;
+            }
         }
 
         client.close();
@@ -209,8 +215,23 @@ public class TCPServer {
         }
     }
 
+    public void readAskStreaming(BufferedReader in, String msg){
+        if(this.state.getSelf().equals("O1")){
+            System.out.println("got it");
+        }
+        else{
+            redirectMessage("O1", msg);
+        }
+    }
+
 
     /* THREAD FUNCTIONS */
+
+    public void redirectMessage(String dest, String message){
+        NodeLink link = this.state.getLinkTo(dest);
+        Thread client = new Thread(new TCPClient(this.state, link.getViaInterface(), TCPClient.REDIRECT, message));
+        client.run();
+    }
 
     public void startInitialClientThreads() throws InterruptedException{
         Map<String, Integer> adjsState = this.state.getNodeAdjacentsState();
@@ -237,6 +258,12 @@ public class TCPServer {
     public void startMonitoring(){
         Timer timer = new Timer();
         timer.schedule(new TCPMonitorClient(state), 0, 3000);
+    }
+
+    public void sendStreamRequest(){
+        NodeLink link = this.state.getLinkTo("O1");
+        Thread client = new Thread(new TCPClient(this.state, link.getViaInterface(), TCPClient.ASK_STREAMING));
+        client.run();
     }
 
     public void sendProbe(String key, boolean initial) throws InterruptedException{
@@ -345,6 +372,14 @@ public class TCPServer {
 
     public boolean isMonitoring(String msg){
         return isPrefixOf(msg, "monitoring");
+    }
+
+    public boolean isStreamClient(String msg){
+        return isPrefixOf(msg, "i want a stream");
+    }
+
+    public boolean isAskStreaming(String msg){
+        return isPrefixOf(msg, "want streaming");
     }
 
     public boolean isEnd(String msg){

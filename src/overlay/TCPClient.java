@@ -19,6 +19,10 @@ public class TCPClient extends Thread{
     public static final int SEND_ROUTES = 5;
     public static final int INIT_MONITORING = 6;
     public static final int MONITORING = 7;
+    public static final int OPEN_STREAM_CLIENT = 8;
+    public static final int ASK_STREAMING = 9;
+    public static final int REDIRECT = 10;
+
 
     public TCPClient(NodeState state, InetAddress neighbor, int behaviour){
         this.state = state;
@@ -63,6 +67,18 @@ public class TCPClient extends Thread{
                 case MONITORING:
                     String[] nodesVisited = (String[]) extraInfo;
                     sender.sendMonitoringMessage(this.state, nodesVisited); break;
+
+                case OPEN_STREAM_CLIENT:
+                    sender.streamClient();
+                    break;
+
+                case ASK_STREAMING:
+                    sender.sendAskStreaming(this.state); break;
+
+                case REDIRECT:
+                    String msg = (String) extraInfo;
+                    sender.sendMessage(msg);
+                    break;
             }
 
             socket.close();

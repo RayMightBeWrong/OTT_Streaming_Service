@@ -10,9 +10,13 @@ if [ "$1" = "node" ]; then
     	java -cp out overlay.NodeManager "$2";
 fi
 if [ "$1" = "stream" ]; then
-	if [ "$2" = "server" ]; then
-		java -cp out streaming.OTT_Streaming -server;
-	elif [ "$2" = "client" ]; then
-		java -cp out streaming.OTT_Streaming -client;
-	fi
+	java -cp out overlay.NodeManager stream;
 fi
+
+#if [ "$1" = "stream" ]; then
+#	if [ "$2" = "server" ]; then
+#		java -cp out streaming.OTT_Streaming -server;
+#	elif [ "$2" = "client" ]; then
+#		java -cp out streaming.OTT_Streaming -client;
+#	fi
+#fi

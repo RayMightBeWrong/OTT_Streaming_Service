@@ -115,6 +115,15 @@ public class MessageSender {
         end();
     }
 
+    public void streamClient(){
+        sendMessage("i want a stream");
+        end();
+    }
+
+    public void sendAskStreaming(NodeState state){
+        sendMessage("want streaming: " + state.getSelf());
+    }
+
     public void end(){
         sendMessage("end");
     }
