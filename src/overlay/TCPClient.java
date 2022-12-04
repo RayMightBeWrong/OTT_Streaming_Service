@@ -17,7 +17,8 @@ public class TCPClient extends Thread{
     public static final int PROBE_REGULAR = 3;
     public static final int SEND_NEW_LINK = 4;
     public static final int SEND_ROUTES = 5;
-    public static final int MONITORING = 6;
+    public static final int INIT_MONITORING = 6;
+    public static final int MONITORING = 7;
 
     public TCPClient(NodeState state, InetAddress neighbor, int behaviour){
         this.state = state;
@@ -56,8 +57,12 @@ public class TCPClient extends Thread{
                 case SEND_ROUTES:
                     sender.sendRoutes(this.state, (String) extraInfo); break;
 
+                case INIT_MONITORING:
+                    sender.sendInitialMonitoringMessage(this.state); break;
+
                 case MONITORING:
-                    sender.sendMonitoringMessage(this.state); break;
+                    String[] nodesVisited = (String[]) extraInfo;
+                    sender.sendMonitoringMessage(this.state, nodesVisited); break;
             }
 
             socket.close();

@@ -59,7 +59,6 @@ public class MessageSender {
     }
 
 
-
     /*  MESSAGES SENT BY ALL */
 
     public void probe(boolean initial){
@@ -98,8 +97,20 @@ public class MessageSender {
         end();
     }
 
-    public void sendMonitoringMessage(NodeState state){
+    public void sendInitialMonitoringMessage(NodeState state){
         sendMessage("monitoring: " + state.getSelf());
+        probe(false);
+        end();
+    }
+
+    public void sendMonitoringMessage(NodeState state, String[] nodesVisited){
+        StringBuilder msg = new StringBuilder("monitoring:");
+        
+        for(String node: nodesVisited)
+            msg.append(" " + node);
+        msg.append(" " + state.getSelf());
+
+        sendMessage(msg.toString());
         probe(false);
         end();
     }

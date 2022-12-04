@@ -192,8 +192,11 @@ public class TCPServer {
     }
 
     public void readMonitoring(Socket client, BufferedReader in, String msg) throws Exception{
-        String fromNode = getSuffixFromPrefix(msg, "monitoring: ");
+        String[] args = getNodesVisited(msg);
+
+        String fromNode = args[args.length - 1];
         sendProbe(fromNode, false);
+        sendMonitoringToAdjacents(args);
 
         while(true){
             msg = in.readLine();
@@ -205,7 +208,6 @@ public class TCPServer {
                 break;
         }
     }
-
 
 
     /* THREAD FUNCTIONS */
@@ -290,6 +292,21 @@ public class TCPServer {
         client.join();
     }
 
+    public void sendMonitoringToAdjacents(String[] nodesVisited) throws InterruptedException{
+        Map<String, Integer> adjsState = this.state.getNodeAdjacentsState();
+        Map<String, List<InetAddress>> adjs = this.state.getNodeAdjacents();
+
+        for(Map.Entry<String, Integer> entry: adjsState.entrySet()){
+            if (entry.getValue() == Vertex.ON){
+                if(!isNodeInArray(nodesVisited, entry.getKey())){
+                    List<InetAddress> ips = adjs.get(entry.getKey());
+                    Thread client = new Thread(new TCPClient(this.state, ips.get(0), TCPClient.MONITORING, nodesVisited));
+                    client.start();
+                    client.join();
+                }
+            }
+        }
+    }
 
 
     /* AUXILIARY READ FUNCTIONS */
@@ -334,9 +351,17 @@ public class TCPServer {
         return isPrefixOf(msg, "end");
     }
 
+    public boolean isNodeInArray(String[] nodes, String node){
+        boolean res = false;
 
+        for(String s: nodes)
+            if (node.equals(s)){
+                res = true;
+                break;
+            }
 
-
+        return res;
+    }
 
 
     public String getSuffixFromPrefix(String msg, String prefix){
@@ -362,5 +387,10 @@ public class TCPServer {
 
     public String getNewLinkDest(String msg){
         return getSuffixFromPrefix(msg, "new link: ");
+    }
+
+    public String[] getNodesVisited(String msg){
+        String nodes = getSuffixFromPrefix(msg, "monitoring: ");
+        return nodes.split(" ");
     }
 }

@@ -20,7 +20,7 @@ public class TCPMonitorClient extends TimerTask{
         for(Map.Entry<String, Integer> entry: adjsState.entrySet()){
             if (entry.getValue() == Vertex.ON){
                 List<InetAddress> ips = adjs.get(entry.getKey());
-                Thread client = new Thread(new TCPClient(this.state, ips.get(0), TCPClient.MONITORING));
+                Thread client = new Thread(new TCPClient(this.state, ips.get(0), TCPClient.INIT_MONITORING));
                 client.start();
                 
                 try {
