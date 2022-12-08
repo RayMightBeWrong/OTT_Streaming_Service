@@ -1,11 +1,14 @@
-package overlay;
+package overlay.TCP;
 
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
 
+import overlay.state.NodeLink;
+import overlay.state.NodeState;
 
-public class TCPClient extends Thread{
+
+public class TCPCommunicator extends Thread{
     private NodeState state;
     private InetAddress neighbor;
     private int behaviour;
@@ -27,13 +30,13 @@ public class TCPClient extends Thread{
     public static final int ACK_OPEN_UDP_MIDDLEMAN = 13;
 
 
-    public TCPClient(NodeState state, InetAddress neighbor, int behaviour){
+    public TCPCommunicator(NodeState state, InetAddress neighbor, int behaviour){
         this.state = state;
         this.neighbor = neighbor;
         this.behaviour = behaviour;
     }
 
-    public TCPClient(NodeState state, InetAddress neighbor, int behaviour, Object extraInfo){
+    public TCPCommunicator(NodeState state, InetAddress neighbor, int behaviour, Object extraInfo){
         this.state = state;
         this.neighbor = neighbor;
         this.behaviour = behaviour;
@@ -42,9 +45,9 @@ public class TCPClient extends Thread{
 
     public void run(){
         try {
-            Socket socket = new Socket(this.neighbor, TCPServer.PORT);
+            Socket socket = new Socket(this.neighbor, TCPHandler.PORT);
             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-            MessageSender sender = new MessageSender(out);
+            TCPMessageSender sender = new TCPMessageSender(out);
 
             switch(this.behaviour){
                 case HELLO:

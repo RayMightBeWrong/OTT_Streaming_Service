@@ -1,4 +1,4 @@
-package overlay;
+package overlay.bootstrapper;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -11,6 +11,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import overlay.TCP.TCPMessageSender;
+import overlay.state.NodeState;
+import overlay.state.Vertex;
+
 
 public class BStrapperClient{
 
@@ -19,7 +23,7 @@ public class BStrapperClient{
             Socket socket = new Socket(InetAddress.getByName(bstrapper), BStrapper.PORT);
             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            MessageSender sender = new MessageSender(out);
+            TCPMessageSender sender = new TCPMessageSender(out);
 
             sender.hello();
             NodeState state = getInitialMsg(in, socket);

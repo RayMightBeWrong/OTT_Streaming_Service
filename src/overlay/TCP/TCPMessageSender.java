@@ -1,4 +1,4 @@
-package overlay;
+package overlay.TCP;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -7,10 +7,14 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
-public class MessageSender {
+import overlay.state.NodeLink;
+import overlay.state.NodeState;
+import overlay.state.Vertex;
+
+public class TCPMessageSender {
     private PrintWriter out;
 
-    public MessageSender(PrintWriter out){
+    public TCPMessageSender(PrintWriter out){
         this.out = out;
     }
 

@@ -1,4 +1,4 @@
-package overlay;
+package overlay.TCP;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -11,12 +11,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 
+import overlay.state.NodeLink;
+import overlay.state.NodeState;
+import overlay.state.Vertex;
 import streaming.UDPClient;
 import streaming.UDPMiddleMan;
 import streaming.UDPServer;
 
 
-public class TCPServer {
+public class TCPHandler {
     private NodeState state;
     private int nodeType;
 
@@ -27,7 +30,7 @@ public class TCPServer {
     public static final int NORMAL_NODE = 1;
     public static final int SERVER_NODE = 2;
 
-    public TCPServer(NodeState state, int nodeType){
+    public TCPHandler(NodeState state, int nodeType){
         this.state = state;
         this.nodeType = nodeType;
     }
@@ -287,7 +290,7 @@ public class TCPServer {
         String from = this.state.findAdjNodeFromAddress(client.getInetAddress());
         
         if (this.state.getSelf().equals(SERVER))
-            startVideoSender("O2");
+            startVideoSender("O5");
         //if (this.state.getSelf().equals(SERVER))
         //    ;
         
@@ -298,7 +301,7 @@ public class TCPServer {
 
     public void redirectMessage(String dest, String message){
         NodeLink link = this.state.getLinkTo(dest);
-        Thread client = new Thread(new TCPClient(this.state, link.getViaInterface(), TCPClient.REDIRECT, message));
+        Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.REDIRECT, message));
         client.run();
     }
 
@@ -309,7 +312,7 @@ public class TCPServer {
         for(Map.Entry<String, Integer> entry: adjsState.entrySet()){
             if (entry.getValue() == Vertex.ON){
                 List<InetAddress> ips = adjs.get(entry.getKey());
-                Thread client = new Thread(new TCPClient(this.state, ips.get(0), TCPClient.HELLO));
+                Thread client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.HELLO));
                 client.start();
                 client.join();
             }
@@ -319,7 +322,7 @@ public class TCPServer {
     public void startInitialClientThread(String key) throws InterruptedException{
         List<InetAddress> ips = this.state.findAddressesFromAdjNode(key);
 
-        Thread client = new Thread(new TCPClient(this.state, ips.get(0), TCPClient.HELLO));
+        Thread client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.HELLO));
         client.start();
         client.join();
     }
@@ -355,12 +358,12 @@ public class TCPServer {
 
     public void startMonitoring(){
         Timer timer = new Timer();
-        timer.schedule(new TCPMonitorClient(state), 0, 3000);
+        timer.schedule(new TCPMonitor(state), 0, 3000);
     }
 
     public void sendStreamRequest(){
         NodeLink link = this.state.getLinkTo(SERVER);
-        Thread client = new Thread(new TCPClient(this.state, link.getViaInterface(), TCPClient.ASK_STREAMING));
+        Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.ASK_STREAMING));
         client.run();
     }
 
@@ -369,9 +372,9 @@ public class TCPServer {
 
         Thread client;
         if (initial)
-            client = new Thread(new TCPClient(this.state, ips.get(0), TCPClient.PROBE_INITIAL));
+            client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.PROBE_INITIAL));
         else
-            client = new Thread(new TCPClient(this.state, ips.get(0), TCPClient.PROBE_REGULAR));
+            client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.PROBE_REGULAR));
 
         client.start();
         client.join();
@@ -385,7 +388,7 @@ public class TCPServer {
             if (entry.getValue() == Vertex.ON){
                 if(!entry.getKey().equals(fromNode)){
                     List<InetAddress> ips = adjs.get(entry.getKey());
-                    Thread client = new Thread(new TCPClient(this.state, ips.get(0), TCPClient.SEND_NEW_LINK, fromNode));
+                    Thread client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.SEND_NEW_LINK, fromNode));
                     client.start();
                     client.join();
                 }
@@ -401,7 +404,7 @@ public class TCPServer {
             if (entry.getValue() == Vertex.ON){
                 if(!entry.getKey().equals(fromNode) && !entry.getKey().equals(viaNode)){
                     List<InetAddress> ips = adjs.get(entry.getKey());
-                    Thread client = new Thread(new TCPClient(this.state, ips.get(0), TCPClient.SEND_NEW_LINK, fromNode));
+                    Thread client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.SEND_NEW_LINK, fromNode));
                     client.start();
                     client.join();
                 }
@@ -412,7 +415,7 @@ public class TCPServer {
     public void sendRoutesToNewAdj(String fromNode) throws InterruptedException{
         List<InetAddress> ips = this.state.findAddressesFromAdjNode(fromNode);
 
-        Thread client = new Thread(new TCPClient(this.state, ips.get(0), TCPClient.SEND_ROUTES, fromNode));
+        Thread client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.SEND_ROUTES, fromNode));
         client.start();
         client.join();
     }
@@ -425,7 +428,7 @@ public class TCPServer {
             if (entry.getValue() == Vertex.ON){
                 if(!isNodeInArray(nodesVisited, entry.getKey())){
                     List<InetAddress> ips = adjs.get(entry.getKey());
-                    Thread client = new Thread(new TCPClient(this.state, ips.get(0), TCPClient.MONITORING, nodesVisited));
+                    Thread client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.MONITORING, nodesVisited));
                     client.start();
                     client.join();
                 }
@@ -448,7 +451,7 @@ public class TCPServer {
             if (entry.getValue() == Vertex.ON){
                 if(!isNodeInArray(nodesVisited, entry.getKey())){
                     List<InetAddress> ips = adjs.get(entry.getKey());
-                    Thread client = new Thread(new TCPClient(this.state, ips.get(0), TCPClient.NEW_STREAM, nodesInfo));
+                    Thread client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.NEW_STREAM, nodesInfo));
                     client.start();
                     client.join();
                 }
@@ -458,13 +461,13 @@ public class TCPServer {
 
     public void sendOpenUDPMiddleMan(String dest){
         NodeLink link = this.state.getLinkTo(dest);
-        Thread client = new Thread(new TCPClient(this.state, link.getViaInterface(), TCPClient.OPEN_UDP_MIDDLEMAN, dest));
+        Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.OPEN_UDP_MIDDLEMAN, dest));
         client.start();
     }
 
     public void sendACKOpenUDPMiddleMan(String dest){
         NodeLink link = this.state.getLinkTo(dest);
-        Thread client = new Thread(new TCPClient(this.state, link.getViaInterface(), TCPClient.ACK_OPEN_UDP_MIDDLEMAN));
+        Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.ACK_OPEN_UDP_MIDDLEMAN));
         client.start();
     }
 

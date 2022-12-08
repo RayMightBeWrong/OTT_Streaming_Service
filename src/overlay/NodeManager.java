@@ -1,5 +1,12 @@
 package overlay;
 
+import overlay.TCP.TCPHandler;
+import overlay.bootstrapper.BStrapper;
+import overlay.bootstrapper.BStrapperClient;
+import overlay.bootstrapper.ConfigParser;
+import overlay.state.Graph;
+import overlay.state.NodeState;
+
 public class NodeManager {
     public static void main(String[] args){
         if (args.length == 2 && args[0].equals("config")){
@@ -11,7 +18,7 @@ public class NodeManager {
 
             NodeState state = graph.graphToNodeState(parser.getBootstrapperName());
 
-            TCPServer server = new TCPServer(state, TCPServer.SERVER_NODE);
+            TCPHandler server = new TCPHandler(state, TCPHandler.SERVER_NODE);
             server.run();
 
             try {
@@ -23,7 +30,7 @@ public class NodeManager {
         else if (args.length == 1){
             NodeState state = BStrapperClient.readInitialMsg(args[0]);
 
-            TCPServer server = new TCPServer(state, TCPServer.NORMAL_NODE);
+            TCPHandler server = new TCPHandler(state, TCPHandler.NORMAL_NODE);
             server.run();
         }
     }

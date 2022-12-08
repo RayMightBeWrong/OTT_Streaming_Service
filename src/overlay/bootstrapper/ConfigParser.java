@@ -1,4 +1,4 @@
-package overlay;
+package overlay.bootstrapper;
 
 import java.io.File;
 import java.net.InetAddress;
@@ -14,6 +14,9 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
+
+import overlay.state.Graph;
+import overlay.state.Vertex;
 
 public class ConfigParser {
     private File file;

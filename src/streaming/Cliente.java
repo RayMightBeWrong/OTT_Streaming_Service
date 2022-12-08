@@ -12,6 +12,8 @@ package streaming;
    import java.awt.*;
    import java.awt.event.*;
    import javax.swing.*;
+
+import overlay.TCP.TCPCommunicator;
    
    public class Cliente {
    
@@ -113,6 +115,14 @@ package streaming;
    
        System.out.println("Play Button pressed !"); 
              //start the timers ... 
+              TCPCommunicator client;
+              try {
+                client = new TCPCommunicator(null, InetAddress.getByName("localhost"), TCPCommunicator.OPEN_STREAM_CLIENT);
+                client.run();
+              } catch (UnknownHostException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+              }
              cTimer.start();
            }
      }

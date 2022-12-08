@@ -1,4 +1,4 @@
-package overlay;
+package overlay.state;
 
 import java.net.InetAddress;
 import java.util.ArrayList;

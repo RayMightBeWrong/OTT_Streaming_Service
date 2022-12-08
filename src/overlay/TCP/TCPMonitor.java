@@ -1,14 +1,17 @@
-package overlay;
+package overlay.TCP;
 
 import java.net.InetAddress;
 import java.util.List;
 import java.util.Map;
 import java.util.TimerTask;
 
-public class TCPMonitorClient extends TimerTask{
+import overlay.state.NodeState;
+import overlay.state.Vertex;
+
+public class TCPMonitor extends TimerTask{
     private NodeState state;
 
-    public TCPMonitorClient(NodeState state){
+    public TCPMonitor(NodeState state){
         this.state = state;
     }
 
@@ -20,7 +23,7 @@ public class TCPMonitorClient extends TimerTask{
         for(Map.Entry<String, Integer> entry: adjsState.entrySet()){
             if (entry.getValue() == Vertex.ON){
                 List<InetAddress> ips = adjs.get(entry.getKey());
-                Thread client = new Thread(new TCPClient(this.state, ips.get(0), TCPClient.INIT_MONITORING));
+                Thread client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.INIT_MONITORING));
                 client.start();
                 
                 try {

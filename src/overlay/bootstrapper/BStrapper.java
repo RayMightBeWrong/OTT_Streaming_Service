@@ -1,4 +1,4 @@
-package overlay;
+package overlay.bootstrapper;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -9,6 +9,10 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
 import java.util.Map;
+
+import overlay.TCP.TCPMessageSender;
+import overlay.state.Graph;
+import overlay.state.Vertex;
 
 public class BStrapper extends Thread{
     private Graph graph;
@@ -35,7 +39,7 @@ public class BStrapper extends Thread{
     public void treatClient(Socket client) throws IOException{
         PrintWriter out = new PrintWriter(client.getOutputStream(), true);
         BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
-        MessageSender sender = new MessageSender(out);
+        TCPMessageSender sender = new TCPMessageSender(out);
         
         while(true){
             String msg = in.readLine();
