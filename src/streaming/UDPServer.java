@@ -1,31 +1,18 @@
 package streaming;
 
-import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.SocketException;
+import java.net.InetAddress;
+import java.util.Timer;
 
 public class UDPServer extends Thread{
+    public static final int PORT = 25000;
+    private InetAddress ip;
+
+    public UDPServer(InetAddress ip){
+        this.ip = ip;
+    }
     
     public void run(){
-        try {
-            DatagramSocket socket = new DatagramSocket(4445);
-            
-            while(true){
-                byte[] buf = new byte[256];
-                DatagramPacket packet = new DatagramPacket(buf, buf.length);
-                try {
-                    socket.receive(packet);
-                    break;
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            socket.close();
-        } 
-        catch (SocketException e) {
-            e.printStackTrace();
-        }
+        Timer sender = new Timer();
+        sender.schedule(new VideoSender(ip, "movie.Mjpeg"), 0, VideoSender.FRAME_PERIOD);
     }
 }

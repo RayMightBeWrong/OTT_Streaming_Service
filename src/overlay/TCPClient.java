@@ -13,15 +13,18 @@ public class TCPClient extends Thread{
     private Object extraInfo;
 
     public static final int HELLO = 1;
-    public static final int PROBE_INITIAL = 2;
-    public static final int PROBE_REGULAR = 3;
-    public static final int SEND_NEW_LINK = 4;
-    public static final int SEND_ROUTES = 5;
-    public static final int INIT_MONITORING = 6;
-    public static final int MONITORING = 7;
-    public static final int OPEN_STREAM_CLIENT = 8;
-    public static final int ASK_STREAMING = 9;
-    public static final int REDIRECT = 10;
+    public static final int REDIRECT = 2;
+    public static final int PROBE_INITIAL = 3;
+    public static final int PROBE_REGULAR = 4;
+    public static final int SEND_NEW_LINK = 5;
+    public static final int SEND_ROUTES = 6;
+    public static final int INIT_MONITORING = 7;
+    public static final int MONITORING = 8;
+    public static final int OPEN_STREAM_CLIENT = 9;
+    public static final int ASK_STREAMING = 10;
+    public static final int NEW_STREAM = 11;
+    public static final int OPEN_UDP_MIDDLEMAN = 12;
+    public static final int ACK_OPEN_UDP_MIDDLEMAN = 13;
 
 
     public TCPClient(NodeState state, InetAddress neighbor, int behaviour){
@@ -46,6 +49,11 @@ public class TCPClient extends Thread{
             switch(this.behaviour){
                 case HELLO:
                     sender.hello(); break;
+
+                case REDIRECT:
+                    String msg = (String) extraInfo;
+                    sender.sendMessage(msg);
+                    break;
 
                 case PROBE_INITIAL:
                     sender.probe(true); break;
@@ -75,10 +83,22 @@ public class TCPClient extends Thread{
                 case ASK_STREAMING:
                     sender.sendAskStreaming(this.state); break;
 
-                case REDIRECT:
-                    String msg = (String) extraInfo;
-                    sender.sendMessage(msg);
+                case NEW_STREAM:
+                    String[] nodesInfo = (String[]) extraInfo;
+                    String[] visited = new String[nodesInfo.length - 1];
+                    for(int i = 0; i < nodesInfo.length - 1; i++){
+                        visited[i] = nodesInfo[i];
+                    }
+                    String newDest = nodesInfo[nodesInfo.length - 1];
+                    sender.sendNewStreamSignal(this.state, visited, newDest); 
                     break;
+
+                case OPEN_UDP_MIDDLEMAN:
+                    String dest = (String) extraInfo;
+                    sender.sendOpenUDPMiddleManSignal(dest); break;
+
+                case ACK_OPEN_UDP_MIDDLEMAN:
+                    sender.ackOpenUDPMiddleManSignal(); break;       
             }
 
             socket.close();

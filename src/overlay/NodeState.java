@@ -1,6 +1,7 @@
 package overlay;
 
 import java.net.InetAddress;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
@@ -8,11 +9,13 @@ import java.util.concurrent.locks.ReentrantLock;
 public class NodeState {
     private Vertex node;
     private DistancesTable table;
+    private List<String> streams;
     private final ReentrantLock lock;
     
     public NodeState(Vertex node){
         this.node = node;
         this.table = new DistancesTable();
+        this.streams = new ArrayList<>();
         this.lock = new ReentrantLock();
     }
 
@@ -38,6 +41,28 @@ public class NodeState {
         this.lock.lock();
         try{
             this.table.addLink(dest, viaNode, viaInterface, cost);
+        }
+        finally{
+            this.lock.unlock();
+        }
+    }
+
+    public void addStream(String dest){
+        this.lock.lock();
+        try{
+            if (!this.streams.contains(dest));
+                this.streams.add(dest);
+        }
+        finally{
+            this.lock.unlock();
+        }
+    }
+
+    public void removeStream(String dest){
+        this.lock.lock();
+        try{
+            if (!this.streams.contains(dest));
+                this.streams.remove(dest);
         }
         finally{
             this.lock.unlock();
@@ -90,6 +115,9 @@ public class NodeState {
         sb.append("\n");
         sb.append("Table:\n");
         sb.append(this.table.toString());
+        sb.append("Streams:\n");
+        for(String stream: this.streams)
+            sb.append("\tRECEIVING STREAM: " + stream + "\n");
 
         return sb.toString();
     }

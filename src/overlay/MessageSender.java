@@ -124,6 +124,26 @@ public class MessageSender {
         sendMessage("want streaming: " + state.getSelf());
     }
 
+    public void sendNewStreamSignal(NodeState state, String[] nodesVisited, String node){
+        sendMessage("sending stream to: " + node);
+
+        StringBuilder msg = new StringBuilder("sent to:");
+        for(String visited: nodesVisited)
+            msg.append(" " + visited);
+        msg.append(" " + state.getSelf());
+
+        sendMessage(msg.toString());
+        end();
+    }
+
+    public void sendOpenUDPMiddleManSignal(String dest){
+        sendMessage("open UDP middleman: " + dest);
+    }
+
+    public void ackOpenUDPMiddleManSignal(){
+        sendMessage("ack open UDP middleman");
+    }
+
     public void end(){
         sendMessage("end");
     }

@@ -11,9 +11,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 
+import streaming.UDPClient;
+import streaming.UDPMiddleMan;
+import streaming.UDPServer;
+
+
 public class TCPServer {
     private NodeState state;
     private int nodeType;
+
+    private String SERVER = "O1";
 
     public static final int PORT = 6667;
 
@@ -71,6 +78,15 @@ public class TCPServer {
             }
             else if (isAskStreaming(msg)){
                 readAskStreaming(in, msg); break;
+            }
+            else if (isNewStreamSignal(msg)){
+                readNewStreamSignal(in, msg); break;
+            }
+            else if (isOpenUDPMiddleMan(msg)){
+                readOpenUDPMiddleMan(client, msg); break;
+            }
+            else if (isACKOpenUDPMiddleMan(msg)){
+                readACKOpenUDPMiddleMan(client, msg); break;
             }
         }
 
@@ -215,13 +231,66 @@ public class TCPServer {
         }
     }
 
-    public void readAskStreaming(BufferedReader in, String msg){
-        if(this.state.getSelf().equals("O1")){
+    public void readAskStreaming(BufferedReader in, String msg) throws Exception{
+        if(this.state.getSelf().equals(SERVER)){
+            String dest = getSuffixFromPrefix(msg, "want streaming: ");
             System.out.println("got it");
+            this.state.addStream(dest);
+
+            sendNewStreamSignal(new String[0], dest);
+            sendOpenUDPMiddleMan(dest);
+
+            System.out.println("\n__________________________________________________\n\nESTADO");
+            System.out.println(this.state.toString());
+            System.out.println("__________________________________________________");
         }
         else{
-            redirectMessage("O1", msg);
+            redirectMessage(SERVER, msg);
         }
+    }
+
+    public void readNewStreamSignal(BufferedReader in, String msg) throws Exception{
+        String dest = getSuffixFromPrefix(msg, "sending stream to: ");
+        this.state.addStream(dest);
+
+        String[] args = {};
+
+        while(true){
+            msg = in.readLine();
+            
+            if(isPrefixOf(msg, "sent to")){
+                args = getNodesVisited(msg);
+            }
+            else if (isEnd(msg))
+                break;
+        }
+
+        sendNewStreamSignal(args, dest);
+
+        System.out.println("\n__________________________________________________\n\nESTADO");
+        System.out.println(this.state.toString());
+        System.out.println("__________________________________________________");
+    }
+
+    public void readOpenUDPMiddleMan(Socket client, String msg) throws Exception{
+        String from = this.state.findAdjNodeFromAddress(client.getInetAddress());
+        String dest = getSuffixFromPrefix(msg, "open UDP middleman: ");
+
+        if (!this.state.getSelf().equals(dest)){
+            sendOpenUDPMiddleMan(dest);
+        }
+        startUDPMiddleMan(dest);
+        sendACKOpenUDPMiddleMan(from);
+    }
+
+    public void readACKOpenUDPMiddleMan(Socket client, String msg) throws Exception{
+        String from = this.state.findAdjNodeFromAddress(client.getInetAddress());
+        
+        if (this.state.getSelf().equals(SERVER))
+            startVideoSender("O2");
+        //if (this.state.getSelf().equals(SERVER))
+        //    ;
+        
     }
 
 
@@ -255,13 +324,42 @@ public class TCPServer {
         client.join();
     }
 
+    public void startUDPServer(){
+        //Thread UDPServer = new Thread(new UDPServer());
+        //UDPServer.start();
+    }
+
+    public void startVideoSender(String dest){
+        NodeLink link = this.state.getLinkTo(dest);
+        Thread UDPServer = new Thread(new UDPServer(link.getViaInterface()));
+        UDPServer.start();
+    }
+
+    public void startUDPClient(String dest){
+        //NodeLink link = this.state.getLinkTo(dest);
+        Thread UDPClient = new Thread(new UDPClient());
+        UDPClient.start();
+    }
+
+    public void startUDPMiddleMan(String dest){
+        if (!this.state.getSelf().equals(dest)){
+            NodeLink link = this.state.getLinkTo(dest);
+            Thread UDPClient = new Thread(new UDPMiddleMan(link.getViaInterface()));
+            UDPClient.start();
+        }
+        else{
+            Thread UDPClient = new Thread(new UDPClient());
+            UDPClient.start();
+        }
+    }
+
     public void startMonitoring(){
         Timer timer = new Timer();
         timer.schedule(new TCPMonitorClient(state), 0, 3000);
     }
 
     public void sendStreamRequest(){
-        NodeLink link = this.state.getLinkTo("O1");
+        NodeLink link = this.state.getLinkTo(SERVER);
         Thread client = new Thread(new TCPClient(this.state, link.getViaInterface(), TCPClient.ASK_STREAMING));
         client.run();
     }
@@ -335,6 +433,41 @@ public class TCPServer {
         }
     }
 
+    public void sendNewStreamSignal(String[] nodesVisited, String dest) throws InterruptedException{
+        Map<String, Integer> adjsState = this.state.getNodeAdjacentsState();
+        Map<String, List<InetAddress>> adjs = this.state.getNodeAdjacents();
+
+        String[] nodesInfo = new String[nodesVisited.length + 2];
+        for(int i = 0; i < nodesVisited.length; i++)
+            nodesInfo[i] = nodesVisited[i];
+        nodesInfo[nodesVisited.length] = this.state.getSelf();
+        nodesInfo[nodesVisited.length + 1] = dest;
+
+
+        for(Map.Entry<String, Integer> entry: adjsState.entrySet()){
+            if (entry.getValue() == Vertex.ON){
+                if(!isNodeInArray(nodesVisited, entry.getKey())){
+                    List<InetAddress> ips = adjs.get(entry.getKey());
+                    Thread client = new Thread(new TCPClient(this.state, ips.get(0), TCPClient.NEW_STREAM, nodesInfo));
+                    client.start();
+                    client.join();
+                }
+            }
+        }
+    }
+
+    public void sendOpenUDPMiddleMan(String dest){
+        NodeLink link = this.state.getLinkTo(dest);
+        Thread client = new Thread(new TCPClient(this.state, link.getViaInterface(), TCPClient.OPEN_UDP_MIDDLEMAN, dest));
+        client.start();
+    }
+
+    public void sendACKOpenUDPMiddleMan(String dest){
+        NodeLink link = this.state.getLinkTo(dest);
+        Thread client = new Thread(new TCPClient(this.state, link.getViaInterface(), TCPClient.ACK_OPEN_UDP_MIDDLEMAN));
+        client.start();
+    }
+
 
     /* AUXILIARY READ FUNCTIONS */
 
@@ -380,6 +513,18 @@ public class TCPServer {
 
     public boolean isAskStreaming(String msg){
         return isPrefixOf(msg, "want streaming");
+    }
+
+    public boolean isNewStreamSignal(String msg){
+        return isPrefixOf(msg, "sending stream to");
+    }
+
+    public boolean isOpenUDPMiddleMan(String msg){
+        return isPrefixOf(msg, "open UDP middleman");
+    }
+
+    public boolean isACKOpenUDPMiddleMan(String msg){
+        return isPrefixOf(msg, "ack open UDP middleman");
     }
 
     public boolean isEnd(String msg){
