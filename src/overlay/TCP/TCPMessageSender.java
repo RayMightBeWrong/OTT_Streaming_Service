@@ -55,15 +55,22 @@ public class TCPMessageSender {
     }
 
 
-    
-    /*  CLIENT MESSAGES */
+    /*  OTHER MESSAGES */
+
+    public void ack(){
+        sendMessage("ack");
+    }
 
     public void hello(){
         sendMessage("hello");
+        end();
     }
 
-
-    /*  MESSAGES SENT BY ALL */
+    public void helloServer(){
+        sendMessage("hello");
+        sendMessage("i am server");
+        end();
+    }
 
     public void probe(boolean initial){
         String msg;
@@ -97,6 +104,12 @@ public class TCPMessageSender {
                 sendMessage("route done");
             }
         }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("servers:");
+        for(String server: state.getServers())
+            sb.append(" " + server);
+        sendMessage(sb.toString());
 
         end();
     }

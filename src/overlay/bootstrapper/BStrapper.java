@@ -51,8 +51,9 @@ public class BStrapper extends Thread{
                 Map<String, List<InetAddress>> adjs = this.graph.getNodeAdjacents(nodeName);
                 Map<String, Integer> adjsState = this.graph.getNodeAdjacentsState(nodeName);
                 sender.initialMessageBootstrapper(nodeName, adjs, adjsState);
-                break;
             }
+            else if (msg.equals("ack"))
+                break;
         }
 
         client.close();

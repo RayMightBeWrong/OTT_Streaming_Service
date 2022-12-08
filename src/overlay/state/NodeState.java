@@ -10,17 +10,23 @@ public class NodeState {
     private Vertex node;
     private DistancesTable table;
     private List<String> streams;
+    private List<String> servers;
     private final ReentrantLock lock;
     
     public NodeState(Vertex node){
         this.node = node;
         this.table = new DistancesTable();
         this.streams = new ArrayList<>();
+        this.servers = new ArrayList<>();
         this.lock = new ReentrantLock();
     }
 
     public DistancesTable getTable(){
         return this.table;
+    }
+
+    public List<String> getServers(){
+        return this.servers;
     }
 
     public String getSelf(){
@@ -63,6 +69,37 @@ public class NodeState {
         try{
             if (!this.streams.contains(dest));
                 this.streams.remove(dest);
+        }
+        finally{
+            this.lock.unlock();
+        }
+    }
+
+    public void addServer(String server){
+        this.lock.lock();
+        try{
+            boolean isPresent = false;
+            
+            for(String s: this.servers){
+                if(s.equals(server)){
+                    isPresent = true;
+                    break;
+                }
+            }
+
+            if (isPresent == false)
+                this.servers.add(server);
+        }
+        finally{
+            this.lock.unlock();
+        }
+    }
+
+    public void removeServer(String server){
+        this.lock.lock();
+        try{
+            if (!this.servers.contains(server));
+                this.servers.remove(server);
         }
         finally{
             this.lock.unlock();
@@ -115,6 +152,11 @@ public class NodeState {
         sb.append("\n");
         sb.append("Table:\n");
         sb.append(this.table.toString());
+        sb.append("\n");
+        sb.append("Servers: ");
+        for(String server: this.servers)
+            sb.append(server + " ");
+        sb.append("\n\n");
         sb.append("Streams:\n");
         for(String stream: this.streams)
             sb.append("\tRECEIVING STREAM: " + stream + "\n");

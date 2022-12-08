@@ -26,18 +26,19 @@ public class BStrapperClient{
             TCPMessageSender sender = new TCPMessageSender(out);
 
             sender.hello();
-            NodeState state = getInitialMsg(in, socket);
+            NodeState state = getInitialMsg(in, socket, sender);
             socket.close();
 
             return state;
         } 
         catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("Erro ao ler a informação enviado pelo bootstrapper!");
+            System.out.println("Verifique que o bootstrapper está ativo.");
             return null;
         }
     }
 
-    public static NodeState getInitialMsg(BufferedReader in, Socket socket) throws IOException{
+    public static NodeState getInitialMsg(BufferedReader in, Socket socket, TCPMessageSender sender) throws IOException{
         String name = "";
         Map<String, List<InetAddress>> adjs = new HashMap<>();
         Map<String, Integer> adjsState = new HashMap<>();
@@ -45,8 +46,10 @@ public class BStrapperClient{
         String currentAdj = "";
         while(true){
             String msg = in.readLine();
-            if(msg.equals("end"))
+            if(msg.equals("end")){
+                sender.ack();
                 break;
+            }
 
             String[] tokens = msg.split(": ");
             if (tokens[0].equals("YOU"))

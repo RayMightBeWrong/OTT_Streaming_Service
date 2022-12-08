@@ -42,6 +42,7 @@ public class TCPHandler {
             startInitialClientThreads();
 
             if (this.nodeType == SERVER_NODE){
+                this.state.addServer(this.state.getSelf());
                 startMonitoring();
             }
 
@@ -62,7 +63,7 @@ public class TCPHandler {
             System.out.println("S: " + msg);
 
             if (isHello(msg)){
-                readHello(client, msg); break;
+                readHello(client, in, msg); break;
             }
             else if (isProbe(msg)){
                 readProbe(client, msg); break;
@@ -99,13 +100,27 @@ public class TCPHandler {
 
     /* READ FUNCTIONS */
 
-    public void readHello(Socket client, String msg) throws InterruptedException{
+    public void readHello(Socket client, BufferedReader in, String msg) throws Exception{
         String nodeName = this.state.findAdjNodeFromAddress(client.getInetAddress());
-        if (this.state.getAdjState(nodeName) == Vertex.OFF){
-            this.state.setAdjState(nodeName, Vertex.ON);
-            startInitialClientThread(nodeName);
+        boolean isServer = false;
+
+        while(true){
+            msg = in.readLine();
+
+            if (isPrefixOf(msg, "i am server")){
+                isServer = true;
+            }
+            else if (isEnd(msg)){
+                if (this.state.getAdjState(nodeName) == Vertex.OFF){
+                    this.state.setAdjState(nodeName, Vertex.ON);
+                    if (isServer)
+                        this.state.addServer(nodeName);
+                    startInitialClientThread(nodeName);
+                }
+                sendProbe(nodeName, true);
+                break;
+            }
         }
-        sendProbe(nodeName, true);
     }
     
     public void readProbe(Socket client, String msg) throws InterruptedException{
@@ -206,6 +221,11 @@ public class TCPHandler {
                     this.state.addLink(dest, newLink);
                     sendNewLinkToAdjacents(dest, viaNode);
                 }
+            }
+            else if (isPrefixOf(msg, "servers")){
+                String[] servers = getServers(msg);
+                for(String server: servers)
+                    this.state.addServer(server);
             }
             else if (isEnd(msg))
                 break;
@@ -312,7 +332,12 @@ public class TCPHandler {
         for(Map.Entry<String, Integer> entry: adjsState.entrySet()){
             if (entry.getValue() == Vertex.ON){
                 List<InetAddress> ips = adjs.get(entry.getKey());
-                Thread client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.HELLO));
+                
+                Thread client;
+                if (this.nodeType == TCPHandler.NORMAL_NODE)
+                    client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.HELLO));
+                else
+                    client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.HELLO_SERVER));
                 client.start();
                 client.join();
             }
@@ -574,6 +599,11 @@ public class TCPHandler {
 
     public String[] getNodesVisited(String msg){
         String nodes = getSuffixFromPrefix(msg, "monitoring: ");
+        return nodes.split(" ");
+    }
+
+    public String[] getServers(String msg){
+        String nodes = getSuffixFromPrefix(msg, "servers: ");
         return nodes.split(" ");
     }
 }
