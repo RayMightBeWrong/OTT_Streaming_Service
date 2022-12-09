@@ -14,9 +14,9 @@ import java.util.Timer;
 import overlay.state.NodeLink;
 import overlay.state.NodeState;
 import overlay.state.Vertex;
-import streaming.UDPClient;
-import streaming.UDPMiddleMan;
-import streaming.UDPServer;
+import streaming.UDP.UDPClient;
+import streaming.UDP.UDPMiddleMan;
+import streaming.UDP.UDPServer;
 
 
 public class TCPHandler {
@@ -399,7 +399,9 @@ public class TCPHandler {
     }
 
     public void startUDPClient(){
-        Thread UDPClient = new Thread(new UDPClient());
+        List<InetAddress> ips = this.state.getSelfIPs();
+
+        Thread UDPClient = new Thread(new UDPClient(ips.get(0)));
         UDPClient.start();
     }
 
@@ -411,7 +413,9 @@ public class TCPHandler {
             middleman.start();
         }
         else{
-            Thread UDPClient = new Thread(new UDPClient());
+            List<InetAddress> ips = this.state.getSelfIPs();
+
+            Thread UDPClient = new Thread(new UDPClient(ips.get(0)));
             UDPClient.start();
         }
     }

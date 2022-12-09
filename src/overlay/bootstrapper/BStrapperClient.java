@@ -40,6 +40,7 @@ public class BStrapperClient{
 
     public static NodeState getInitialMsg(BufferedReader in, Socket socket, TCPMessageSender sender) throws IOException{
         String name = "";
+        List<InetAddress> ips = new ArrayList<>();
         Map<String, List<InetAddress>> adjs = new HashMap<>();
         Map<String, Integer> adjsState = new HashMap<>();
 
@@ -55,7 +56,7 @@ public class BStrapperClient{
             if (tokens[0].equals("YOU"))
                 name = tokens[1];
 
-            if (tokens[0].equals("ADJ")){
+            else if (tokens[0].equals("ADJ")){
                 currentAdj = tokens[1];
                 
                 if (tokens[2].equals("OFF"))
@@ -66,6 +67,10 @@ public class BStrapperClient{
                 adjs.put(currentAdj, new ArrayList<>());
             }
 
+            else if (tokens[0].equals("You're available at")){
+                ips.add((InetAddress) InetAddress.getByName(tokens[1]));
+            }
+
             else if (tokens[0].equals("Available at")){
                 List<InetAddress> list = adjs.get(currentAdj);
                 list.add((InetAddress) InetAddress.getByName(tokens[1]));
@@ -73,7 +78,7 @@ public class BStrapperClient{
             }
         }
 
-        Vertex v = new Vertex(name, adjs, adjsState, Vertex.ON);
+        Vertex v = new Vertex(name, ips, adjs, adjsState, Vertex.ON);
         return new NodeState(v);
     }
 }

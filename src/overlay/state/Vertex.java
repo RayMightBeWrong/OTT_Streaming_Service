@@ -26,9 +26,9 @@ public class Vertex {
     }
 
     // NodeState vertex
-    public Vertex(String name, Map<String, List<InetAddress>> adjacents, Map<String, Integer> adjsState, int state){
+    public Vertex(String name, List<InetAddress> ips, Map<String, List<InetAddress>> adjacents, Map<String, Integer> adjsState, int state){
         this.name = name;
-        this.ipList = null;
+        this.ipList = ips;
         this.adjacents = adjacents;
         this.adjsState = adjsState;
         this.state = state;
@@ -139,21 +139,5 @@ public class Vertex {
             ips.add(ip);
 
         return new Vertex(this.name, ips, this.state);
-    }
-
-    public Vertex cloneNodeStateVertex(){
-        Map<String, List<InetAddress>> clonedAdjs = new HashMap<>();
-        for(Map.Entry<String, List<InetAddress>> entry: this.adjacents.entrySet()){
-            List<InetAddress> ips = new ArrayList<>();
-            for(InetAddress ip: entry.getValue())
-                ips.add(ip);
-            clonedAdjs.put(entry.getKey(), ips);
-        }
-
-        Map<String, Integer> clonedAdjsState = new HashMap<>();
-        for(Map.Entry<String, Integer> entry: this.adjsState.entrySet())
-            clonedAdjsState.put(entry.getKey(), entry.getValue());
-
-        return new Vertex(this.name, clonedAdjs, clonedAdjsState, state);
     }
 }

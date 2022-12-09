@@ -26,15 +26,20 @@ public class TCPMessageSender {
 
     /*  BOOTSTRAPPER MESSAGES */
 
-    public void initialMessageBootstrapper(String nodeName, Map<String, List<InetAddress>> adjs, Map<String, Integer> adjsState) throws IOException{
-        sendSelfNodeInfo(nodeName);
+    public void initialMessageBootstrapper(String nodeName, List<InetAddress> ips, Map<String, List<InetAddress>> adjs, Map<String, Integer> adjsState) throws IOException{
+        sendSelfNodeInfo(nodeName, ips);
         sendAdjacents(adjs, adjsState);
         end();
     }
 
-    public void sendSelfNodeInfo(String nodeName){
+    public void sendSelfNodeInfo(String nodeName, List<InetAddress> ips){
         String s = "YOU: " + nodeName;
         sendMessage(s);
+
+        for(InetAddress ip: ips){
+            out.println("You're available at: " + ip.getHostAddress());
+        }
+        out.flush();
     }
 
     public void sendAdjacents(Map<String, List<InetAddress>> adjs, Map<String, Integer> adjsState){

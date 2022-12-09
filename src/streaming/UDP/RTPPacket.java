@@ -1,4 +1,4 @@
-package streaming;
+package streaming.UDP;
 
 public class RTPPacket {
     private int HEADER_SIZE = 12;

@@ -73,9 +73,10 @@ public class Graph {
     }
 
     public NodeState graphToNodeState(String self){
+        List<InetAddress> ips = getNodeIPList(self);
         Map<String, List<InetAddress>> adjs = getNodeAdjacents(self);
         Map<String, Integer> adjsState = getNodeAdjacentsState(self);
-        Vertex v = new Vertex(self, adjs, adjsState, Vertex.ON);
+        Vertex v = new Vertex(self, ips, adjs, adjsState, Vertex.ON);
         return new NodeState(v);
     }
 

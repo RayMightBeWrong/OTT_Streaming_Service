@@ -34,6 +34,10 @@ public class NodeState {
         return this.node.getName();
     }
 
+    public List<InetAddress> getSelfIPs(){
+        return this.node.getIPList();
+    }
+
     public void addLink(String dest, NodeLink newLink){
         this.lock.lock();
         try{

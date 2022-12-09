@@ -1,4 +1,4 @@
-package streaming;
+package streaming.UDP;
 
 import java.net.InetAddress;
 import java.util.Timer;

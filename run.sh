@@ -1,7 +1,7 @@
 #!/bin/sh
 
 rm -rf out/*
-javac -d out src/overlay/*.java src/overlay/TCP/*.java src/overlay/state/*.java src/overlay/bootstrapper/*.java src/streaming/*.java
+javac -d out src/overlay/*.java src/overlay/TCP/*.java src/overlay/state/*.java src/overlay/bootstrapper/*.java src/streaming/*.java src/streaming/UDP/*.java
 
 if [ "$1" = "bstrapper" ]; then
 	if [ "$2" = "server" ]; then
@@ -18,5 +18,5 @@ if [ "$1" = "node" ]; then
 	fi
 fi
 if [ "$1" = "stream" ]; then
-	java -cp out streaming.OTTStreaming;
+	java -cp out streaming.OTTStreaming "$2";
 fi
