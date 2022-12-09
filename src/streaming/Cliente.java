@@ -29,6 +29,7 @@ import overlay.TCP.TCPCommunicator;
      JLabel iconLabel = new JLabel();
      ImageIcon icon;
    
+     boolean sendMessage = true;
    
      //RTP variables:
      //----------------
@@ -115,14 +116,17 @@ import overlay.TCP.TCPCommunicator;
    
        System.out.println("Play Button pressed !"); 
              //start the timers ... 
+             if (sendMessage){
               TCPCommunicator client;
               try {
                 client = new TCPCommunicator(null, InetAddress.getByName("localhost"), TCPCommunicator.OPEN_STREAM_CLIENT);
                 client.run();
+                sendMessage = false;
               } catch (UnknownHostException e1) {
                 // TODO Auto-generated catch block
                 e1.printStackTrace();
               }
+            }
              cTimer.start();
            }
      }

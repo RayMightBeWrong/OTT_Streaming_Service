@@ -2,6 +2,7 @@ package overlay.state;
 
 import java.net.InetAddress;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class DistancesTable {
@@ -26,6 +27,26 @@ public class DistancesTable {
 
     public NodeLink getLinkTo(String key){
         return this.table.get(key);
+    }
+
+    public NodeLink getClosestFromList(List<String> list){
+        boolean initial = true;
+        NodeLink min = new NodeLink();
+
+        for(String entry: list){
+            if (this.table.containsKey(entry)){
+                NodeLink tmp = this.table.get(entry);
+                
+                if (initial){
+                    initial = false;
+                    min = tmp;
+                }
+                else if (tmp.getCost() < min.getCost())
+                    min = tmp;
+            }
+        }
+
+        return min;
     }
 
     public boolean isLinkModified(String key, NodeLink newLink){

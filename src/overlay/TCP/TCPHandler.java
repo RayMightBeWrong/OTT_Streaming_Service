@@ -23,8 +23,6 @@ public class TCPHandler {
     private NodeState state;
     private int nodeType;
 
-    private String SERVER = "O1";
-
     public static final int PORT = 6667;
 
     public static final int NORMAL_NODE = 1;
@@ -63,34 +61,44 @@ public class TCPHandler {
             System.out.println("S: " + msg);
 
             if (isHello(msg)){
+                System.out.println("S: hello\n");
                 readHello(client, in, msg); break;
             }
             else if (isProbe(msg)){
+                System.out.println("S: probe\n");
                 readProbe(client, msg); break;
             }
             else if (isNewLink(msg)){
+                System.out.println("S: new link\n");
                 readNewLink(client, in, msg); break;
             }
             else if (isRoutes(msg)){
+                System.out.println("S: routes\n");
                 readRoutes(in, msg); break;
             }
             else if (isMonitoring(msg)){
+                System.out.println("S: monitoring\n");
                 readMonitoring(client, in, msg); break;
             }
             else if (isStreamClient(msg)){
+                System.out.println("S: client wants stream\n");
                 sendStreamRequest(); break;
             }
             else if (isAskStreaming(msg)){
+                System.out.println("S: stream request\n");
                 readAskStreaming(in, msg); break;
             }
             else if (isNewStreamSignal(msg)){
+                System.out.println("S: new stream\n");
                 readNewStreamSignal(in, msg); break;
             }
             else if (isOpenUDPMiddleMan(msg)){
-                readOpenUDPMiddleMan(client, msg); break;
+                System.out.println("S: open UDP middleman\n");
+                readOpenUDPMiddleMan(client, in, msg); break;
             }
             else if (isACKOpenUDPMiddleMan(msg)){
-                readACKOpenUDPMiddleMan(client, msg); break;
+                System.out.println("S: ack open UDP middleman\n");
+                readACKOpenUDPMiddleMan(client, in, msg); break;
             }
         }
 
@@ -237,7 +245,7 @@ public class TCPHandler {
     }
 
     public void readMonitoring(Socket client, BufferedReader in, String msg) throws Exception{
-        String[] args = getNodesVisited(msg);
+        String[] args = getNodesVisited(msg, "monitoring: ");
 
         String fromNode = args[args.length - 1];
         sendProbe(fromNode, false);
@@ -255,20 +263,27 @@ public class TCPHandler {
     }
 
     public void readAskStreaming(BufferedReader in, String msg) throws Exception{
-        if(this.state.getSelf().equals(SERVER)){
-            String dest = getSuffixFromPrefix(msg, "want streaming: ");
-            System.out.println("got it");
+        String server = "";
+        String dest = getSuffixFromPrefix(msg, "want streaming: ");
+
+        while(true){
+            msg = in.readLine();
+
+            if (isPrefixOf(msg, "from server")){
+                server = getSuffixFromPrefix(msg, "from server: ");
+            }
+            else if (isEnd(msg))
+                break;
+        }
+
+        if(this.state.getSelf().equals(server)){
             this.state.addStream(dest);
 
             sendNewStreamSignal(new String[0], dest);
-            sendOpenUDPMiddleMan(dest);
-
-            System.out.println("\n__________________________________________________\n\nESTADO");
-            System.out.println(this.state.toString());
-            System.out.println("__________________________________________________");
+            sendOpenUDPMiddleMan(new String[0], dest);
         }
         else{
-            redirectMessage(SERVER, msg);
+            sendStreamRequest(dest, server);
         }
     }
 
@@ -282,38 +297,63 @@ public class TCPHandler {
             msg = in.readLine();
             
             if(isPrefixOf(msg, "sent to")){
-                args = getNodesVisited(msg);
+                args = getNodesVisited(msg, "sent to: ");
             }
             else if (isEnd(msg))
                 break;
         }
 
         sendNewStreamSignal(args, dest);
-
-        System.out.println("\n__________________________________________________\n\nESTADO");
-        System.out.println(this.state.toString());
-        System.out.println("__________________________________________________");
     }
 
-    public void readOpenUDPMiddleMan(Socket client, String msg) throws Exception{
-        String from = this.state.findAdjNodeFromAddress(client.getInetAddress());
+    public void readOpenUDPMiddleMan(Socket client, BufferedReader in, String msg) throws Exception{
         String dest = getSuffixFromPrefix(msg, "open UDP middleman: ");
+        
+        String[] args = {};
+        while(true){
+            msg = in.readLine();
+            
+            if(isPrefixOf(msg, "sent to")){
+                args = getNodesVisited(msg, "sent to: ");
+            }
+            else if (isEnd(msg))
+                break;
+        }
 
         if (!this.state.getSelf().equals(dest)){
-            sendOpenUDPMiddleMan(dest);
+            sendOpenUDPMiddleMan(args, dest);
         }
+        else{
+            sendACKOpenUDPMiddleMan(args);
+        }
+
         startUDPMiddleMan(dest);
-        sendACKOpenUDPMiddleMan(from);
     }
 
-    public void readACKOpenUDPMiddleMan(Socket client, String msg) throws Exception{
-        String from = this.state.findAdjNodeFromAddress(client.getInetAddress());
-        
-        if (this.state.getSelf().equals(SERVER))
-            startVideoSender("O5");
-        //if (this.state.getSelf().equals(SERVER))
-        //    ;
-        
+    public void readACKOpenUDPMiddleMan(Socket client, BufferedReader in, String msg) throws Exception{
+        String[] args = {};
+
+        while(true){
+            msg = in.readLine();
+            
+            if(isPrefixOf(msg, "sent to")){
+                args = getNodesVisited(msg, "sent to: ");
+            }
+            else if (isEnd(msg))
+                break;
+        }
+
+        if (this.state.getSelf().equals(args[0])){
+            String from = this.state.findAdjNodeFromAddress(client.getInetAddress());
+            System.out.println("reached servidor");
+            startVideoSender(from);
+        }
+        else{
+            String[] newArgs = new String[args.length - 1];
+            for(int i = 0; i < args.length - 1; i++)
+                newArgs[i] = args[i];
+            sendACKOpenUDPMiddleMan(newArgs);
+        }
     }
 
 
@@ -352,19 +392,13 @@ public class TCPHandler {
         client.join();
     }
 
-    public void startUDPServer(){
-        //Thread UDPServer = new Thread(new UDPServer());
-        //UDPServer.start();
-    }
-
     public void startVideoSender(String dest){
         NodeLink link = this.state.getLinkTo(dest);
         Thread UDPServer = new Thread(new UDPServer(link.getViaInterface()));
         UDPServer.start();
     }
 
-    public void startUDPClient(String dest){
-        //NodeLink link = this.state.getLinkTo(dest);
+    public void startUDPClient(){
         Thread UDPClient = new Thread(new UDPClient());
         UDPClient.start();
     }
@@ -372,8 +406,9 @@ public class TCPHandler {
     public void startUDPMiddleMan(String dest){
         if (!this.state.getSelf().equals(dest)){
             NodeLink link = this.state.getLinkTo(dest);
-            Thread UDPClient = new Thread(new UDPMiddleMan(link.getViaInterface()));
-            UDPClient.start();
+            System.out.println("dest: " + dest);
+            Thread middleman = new Thread(new UDPMiddleMan(link.getViaInterface()));
+            middleman.start();
         }
         else{
             Thread UDPClient = new Thread(new UDPClient());
@@ -387,8 +422,15 @@ public class TCPHandler {
     }
 
     public void sendStreamRequest(){
-        NodeLink link = this.state.getLinkTo(SERVER);
-        Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.ASK_STREAMING));
+        NodeLink link = this.state.getClosestServer();
+        Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.ASK_STREAMING, link.getDest()));
+        client.run();
+    }
+
+    public void sendStreamRequest(String dest, String server){
+        NodeLink link = this.state.getLinkTo(server);
+        String[] args = {dest, server};
+        Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.REDIRECT_ASK_STREAMING, args));
         client.run();
     }
 
@@ -484,15 +526,23 @@ public class TCPHandler {
         }
     }
 
-    public void sendOpenUDPMiddleMan(String dest){
+    public void sendOpenUDPMiddleMan(String[] nodesVisited, String dest){
+        String[] nodesInfo = new String[nodesVisited.length + 2];
+        for(int i = 0; i < nodesVisited.length; i++)
+            nodesInfo[i] = nodesVisited[i];
+        
+        nodesInfo[nodesVisited.length] = this.state.getSelf();
+        nodesInfo[nodesVisited.length + 1] = dest;
+
         NodeLink link = this.state.getLinkTo(dest);
-        Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.OPEN_UDP_MIDDLEMAN, dest));
+        Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.OPEN_UDP_MIDDLEMAN, nodesInfo));
         client.start();
     }
 
-    public void sendACKOpenUDPMiddleMan(String dest){
+    public void sendACKOpenUDPMiddleMan(String[] args){
+        String dest = args[args.length - 1];
         NodeLink link = this.state.getLinkTo(dest);
-        Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.ACK_OPEN_UDP_MIDDLEMAN));
+        Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.ACK_OPEN_UDP_MIDDLEMAN, args));
         client.start();
     }
 
@@ -597,8 +647,8 @@ public class TCPHandler {
         return getSuffixFromPrefix(msg, "new link: ");
     }
 
-    public String[] getNodesVisited(String msg){
-        String nodes = getSuffixFromPrefix(msg, "monitoring: ");
+    public String[] getNodesVisited(String msg, String prefix){
+        String nodes = getSuffixFromPrefix(msg, prefix);
         return nodes.split(" ");
     }
 

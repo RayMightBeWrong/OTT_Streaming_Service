@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 
+
 public class NodeState {
     private Vertex node;
     private DistancesTable table;
@@ -138,6 +139,10 @@ public class NodeState {
 
     public NodeLink getLinkTo(String key){
         return this.table.getLinkTo(key);
+    }
+
+    public NodeLink getClosestServer(){
+        return this.table.getClosestFromList(this.servers);
     }
 
     public boolean isLinkModified(String key, NodeLink newLink){

@@ -26,9 +26,10 @@ public class TCPCommunicator extends Thread{
     public static final int MONITORING = 9;
     public static final int OPEN_STREAM_CLIENT = 10;
     public static final int ASK_STREAMING = 11;
-    public static final int NEW_STREAM = 12;
-    public static final int OPEN_UDP_MIDDLEMAN = 13;
-    public static final int ACK_OPEN_UDP_MIDDLEMAN = 14;
+    public static final int REDIRECT_ASK_STREAMING = 12;
+    public static final int NEW_STREAM = 13;
+    public static final int OPEN_UDP_MIDDLEMAN = 14;
+    public static final int ACK_OPEN_UDP_MIDDLEMAN = 15;
 
 
     public TCPCommunicator(NodeState state, InetAddress neighbor, int behaviour){
@@ -87,7 +88,14 @@ public class TCPCommunicator extends Thread{
                     sender.streamClient(); break;
 
                 case ASK_STREAMING:
-                    sender.sendAskStreaming(this.state); break;
+                    String fromServer = (String) extraInfo;
+                    sender.sendAskStreaming(this.state, fromServer); 
+                    break;
+
+                case REDIRECT_ASK_STREAMING:
+                    String[] args = (String[]) extraInfo;
+                    sender.sendAskStreaming(this.state, args); 
+                    break;
 
                 case NEW_STREAM:
                     String[] nodesInfo = (String[]) extraInfo;
@@ -96,15 +104,26 @@ public class TCPCommunicator extends Thread{
                         visited[i] = nodesInfo[i];
                     }
                     String newDest = nodesInfo[nodesInfo.length - 1];
-                    sender.sendNewStreamSignal(this.state, visited, newDest); 
+
+                    sender.sendNewStreamSignal(visited, newDest); 
                     break;
 
                 case OPEN_UDP_MIDDLEMAN:
-                    String dest = (String) extraInfo;
-                    sender.sendOpenUDPMiddleManSignal(dest); break;
+                    String[] nodesInfo2 = (String[]) extraInfo;
+                    String[] visited2 = new String[nodesInfo2.length - 1];
+                    for(int i = 0; i < nodesInfo2.length - 1; i++){
+                        visited2[i] = nodesInfo2[i];
+                    }
+                    String newDest2 = nodesInfo2[nodesInfo2.length - 1];
+
+                    sender.sendOpenUDPMiddleManSignal(visited2, newDest2); 
+                    break;
 
                 case ACK_OPEN_UDP_MIDDLEMAN:
-                    sender.ackOpenUDPMiddleManSignal(); break;       
+                    String[] newArgs = (String[]) extraInfo;
+
+                    sender.ackOpenUDPMiddleManSignal(newArgs); 
+                    break;       
             }
 
             socket.close();

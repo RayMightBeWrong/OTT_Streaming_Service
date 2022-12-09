@@ -137,28 +137,48 @@ public class TCPMessageSender {
         end();
     }
 
-    public void sendAskStreaming(NodeState state){
+    public void sendAskStreaming(NodeState state, String fromServer){
         sendMessage("want streaming: " + state.getSelf());
+        sendMessage("from server: " + fromServer);
+        end();
     }
 
-    public void sendNewStreamSignal(NodeState state, String[] nodesVisited, String node){
+    public void sendAskStreaming(NodeState state, String[] args){
+        sendMessage("want streaming: " + args[0]);
+        sendMessage("from server: " + args[1]);
+        end();
+    }
+
+    public void sendNewStreamSignal(String[] nodesVisited, String node){
         sendMessage("sending stream to: " + node);
 
         StringBuilder msg = new StringBuilder("sent to:");
         for(String visited: nodesVisited)
             msg.append(" " + visited);
-        msg.append(" " + state.getSelf());
 
         sendMessage(msg.toString());
         end();
     }
 
-    public void sendOpenUDPMiddleManSignal(String dest){
+    public void sendOpenUDPMiddleManSignal(String[] nodesVisited, String dest){
         sendMessage("open UDP middleman: " + dest);
+
+        StringBuilder msg = new StringBuilder("sent to:");
+        for(String visited: nodesVisited)
+            msg.append(" " + visited);
+        
+        sendMessage(msg.toString());
+        end();
     }
 
-    public void ackOpenUDPMiddleManSignal(){
+    public void ackOpenUDPMiddleManSignal(String[] nodesVisited){
         sendMessage("ack open UDP middleman");
+        StringBuilder msg = new StringBuilder("sent to:");
+        for(String visited: nodesVisited)
+            msg.append(" " + visited);
+        
+        sendMessage(msg.toString());
+        end();
     }
 
     public void end(){
