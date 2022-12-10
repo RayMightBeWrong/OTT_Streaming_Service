@@ -17,6 +17,7 @@ public class OTTStreaming {
     private JFrame frame;
     private JButton runButton;
     private JButton pausePlayButton;
+    private JButton teardownButton;
     private JPanel mainPanel;
     private JPanel buttonPanel;
     private JLabel iconLabel;
@@ -37,15 +38,13 @@ public class OTTStreaming {
             frame = new JFrame("STREAM CLIENT");
             runButton = new JButton("RUN");
             pausePlayButton = new JButton("PAUSE / PLAY");
+            teardownButton = new JButton("TEARDOWN");
             mainPanel = new JPanel();
             buttonPanel = new JPanel();
             iconLabel = new JLabel();
 
             frame.addWindowListener(new WindowAdapter() {
                 public void windowClosing(WindowEvent e){
-                    TCPCommunicator client;
-                    client = new TCPCommunicator(null, connectorIP, TCPCommunicator.CANCEL_STREAM_CLIENT);
-                    client.run();
                     System.exit(0);
                 }
             });
@@ -53,9 +52,11 @@ public class OTTStreaming {
             buttonPanel.setLayout(new GridLayout(1, 0));
             buttonPanel.add(runButton);
             buttonPanel.add(pausePlayButton);
+            buttonPanel.add(teardownButton);
 
             runButton.addActionListener(new RunButtonListener());
             pausePlayButton.addActionListener(new PausePlayButtonListener());
+            teardownButton.addActionListener(new TeardownButtonListener());
 
             iconLabel.setIcon(null);
             mainPanel.setLayout(null);
@@ -101,6 +102,16 @@ public class OTTStreaming {
 
             TCPCommunicator client;
             client = new TCPCommunicator(null, connectorIP, TCPCommunicator.PAUSE_STREAM_CLIENT);
+            client.run();
+        }
+    }
+
+    class TeardownButtonListener implements ActionListener{
+        public void actionPerformed(ActionEvent e){
+            System.out.println("TEARDOWN button pressed!");
+
+            TCPCommunicator client;
+            client = new TCPCommunicator(null, connectorIP, TCPCommunicator.CANCEL_STREAM_CLIENT);
             client.run();
             cTimer.start();
         }

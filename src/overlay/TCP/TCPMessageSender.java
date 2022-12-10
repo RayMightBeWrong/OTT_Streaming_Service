@@ -213,6 +213,26 @@ public class TCPMessageSender {
         sendMessage(sb.toString());
     }
 
+    public void endStreamClient(String[] stream){
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("end stream client:");
+        for(String node: stream)
+            sb.append(" " + node);
+        
+        sendMessage(sb.toString());
+    }
+
+    public void endStream(String[] stream){
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("end stream:");
+        for(String node: stream)
+            sb.append(" " + node);
+        
+        sendMessage(sb.toString());
+    }
+
     public void end(){
         sendMessage("end");
     }

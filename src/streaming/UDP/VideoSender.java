@@ -7,6 +7,7 @@ import java.net.SocketException;
 import java.util.TimerTask;
 
 import overlay.TCP.TCPCommunicator;
+import overlay.state.StreamLink;
 
 public class VideoSender extends TimerTask{
     private DatagramPacket senddp;
@@ -17,15 +18,16 @@ public class VideoSender extends TimerTask{
     private byte[] buf;
     public static int bufLength = 15000;
 
-    public static int FRAME_PERIOD = 42;
+    public static int FRAME_PERIOD = 1;
     private int imagenb = 0;
     private VideoStream video;
     private int MJPEG_TYPE = 26;
     private int VIDEO_LENGTH = 500;
     private boolean running;
+    private StreamLink stream;
     
 
-    public VideoSender(InetAddress ownIP, InetAddress clientIP, String videoFileName){
+    public VideoSender(InetAddress ownIP, InetAddress clientIP, String videoFileName, StreamLink stream){
         this.buf = new byte[bufLength];
         this.running = true;
         
@@ -33,6 +35,7 @@ public class VideoSender extends TimerTask{
             this.RTPsocket = new DatagramSocket();
             this.ownIP = ownIP;
             this.clientIP = clientIP;
+            this.stream = stream;
             this.video = new VideoStream(videoFileName);
         } catch (SocketException e) {
             System.out.println("Servidor: erro no socket: " + e.getMessage());
@@ -74,10 +77,10 @@ public class VideoSender extends TimerTask{
                 }
             }
             else{
-                // TODO - terminar stream
-                //TCPCommunicator client;
-                //client = new TCPCommunicator(null, this.ownIP, TCPCommunicator.OPEN_STREAM_CLIENT);
-                //client.run();
+                this.running = false;
+                TCPCommunicator client;
+                client = new TCPCommunicator(null, this.ownIP, TCPCommunicator.END_STREAM_CLIENT, this.stream.convertLinkToArgs());
+                client.run();
             }
         }
     }

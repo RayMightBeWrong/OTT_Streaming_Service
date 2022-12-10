@@ -37,6 +37,8 @@ public class TCPCommunicator extends Thread{
     public static final int PAUSE_STREAMING = 19;
     public static final int CANCEL_STREAM_CLIENT = 20;
     public static final int CANCEL_STREAM = 21;
+    public static final int END_STREAM_CLIENT = 22;
+    public static final int END_STREAM = 23;
 
 
     public TCPCommunicator(NodeState state, InetAddress neighbor, int behaviour){
@@ -147,6 +149,14 @@ public class TCPCommunicator extends Thread{
                 case CANCEL_STREAM:
                     String[] stream2 = (String[]) extraInfo;
                     sender.cancelStream(stream2); break;
+
+                case END_STREAM_CLIENT:
+                    String[] stream3 = (String[]) extraInfo;
+                    sender.endStreamClient(stream3); break;
+
+                case END_STREAM:
+                    String[] stream4 = (String[]) extraInfo;
+                    sender.endStream(stream4); break;
             }
 
             socket.close();
