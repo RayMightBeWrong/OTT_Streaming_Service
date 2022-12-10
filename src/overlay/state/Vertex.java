@@ -124,9 +124,9 @@ public class Vertex {
             sb.append("\tAdjacents' State:\n");
             for (Map.Entry<String, Integer> entry: this.adjsState.entrySet()){
                 if (entry.getValue() == OFF)
-                    sb.append("\t" + entry.getKey() + ": OFF\n");
+                    sb.append("\t\t" + entry.getKey() + ": OFF\n");
                 else
-                    sb.append("\t" + entry.getKey() + ": ON\n"); 
+                    sb.append("\t\t" + entry.getKey() + ": ON\n"); 
             }
         }
 

@@ -25,6 +25,7 @@ public class TCPHandler {
     private NodeState state;
     private int nodeType;
     private Map<String, UDPServer> senders;
+    //private Map<String, UDPMiddleMan> middleman;
 
     public static final int PORT = 6667;
 
@@ -311,7 +312,9 @@ public class TCPHandler {
         }
 
         if(this.state.getSelf().equals(server)){
-            sendOpenUDPMiddleMan(new String[0], dest);
+            int streamNr = getNodeNr(this.state.getSelf()) * 100 + (this.state.getNrStreams() + 1);
+            String[] args = {String.valueOf(streamNr)};
+            sendOpenUDPMiddleMan(args, dest);
         }
         else{
             sendStreamRequest(dest, server);
@@ -334,6 +337,8 @@ public class TCPHandler {
 
         if (!this.state.getSelf().equals(dest)){
             sendOpenUDPMiddleMan(args, dest);
+            if(this.state.anyActiveStream() == false)
+                startUDPMiddleMan(dest);
         }
         else{
             String[] newArgs = new String[args.length + 1];
@@ -341,12 +346,15 @@ public class TCPHandler {
                 newArgs[i] = args[i];
             newArgs[args.length] = this.state.getSelf();
 
-            StreamLink stream = new StreamLink(newArgs);
+            String[] streamArgs = new String[args.length];
+            for(int i = 0; i < args.length; i++)
+                streamArgs[i] = newArgs[i + 1];
+
+            StreamLink stream = new StreamLink(streamArgs, Integer.parseInt(newArgs[0]));
             this.state.addStream(stream);
             sendACKOpenUDPMiddleMan(newArgs);
+            startUDPMiddleMan(dest);
         }
-
-        startUDPMiddleMan(dest);
     }
 
     public void readACKOpenUDPMiddleMan(Socket client, BufferedReader in, String msg) throws Exception{
@@ -362,20 +370,19 @@ public class TCPHandler {
                 break;
         }
 
-        if (this.state.getSelf().equals(args[0])){
-            String from = this.state.findAdjNodeFromAddress(client.getInetAddress());
+        String[] streamArgs = new String[args.length - 1];
+        for(int i = 1; i < args.length; i++)
+            streamArgs[i - 1] = args[i];
+    
+        StreamLink stream = new StreamLink(streamArgs, Integer.parseInt(args[0]));
+        this.state.addStream(stream);
+
+        if (this.state.getSelf().equals(args[1])){
             System.out.println("reached servidor");
-            StreamLink stream = new StreamLink(args);
-            this.state.addStream(stream);
+            String from = this.state.findAdjNodeFromAddress(client.getInetAddress());
             startVideoSender(stream, from);
         }
         else{
-            //String[] newArgs = new String[args.length - 1];
-            //for(int i = 0; i < args.length - 1; i++)
-            //    newArgs[i] = args[i];
-
-            StreamLink stream = new StreamLink(args);
-            this.state.addStream(stream);
             sendACKOpenUDPMiddleMan(args);
         }
     }
@@ -513,7 +520,9 @@ public class TCPHandler {
     public void startUDPMiddleMan(String dest){
         if (!this.state.getSelf().equals(dest)){
             NodeLink link = this.state.getLinkTo(dest);
-            Thread middleman = new Thread(new UDPMiddleMan(link.getViaInterface()));
+            System.out.println("dest: " + dest);
+            System.out.println("interface: " + link.getViaInterface());
+            Thread middleman = new Thread(new UDPMiddleMan(this.state));
             middleman.start();
         }
         else{
@@ -656,16 +665,16 @@ public class TCPHandler {
         }
     }
 
-    public void sendOpenUDPMiddleMan(String[] nodesVisited, String dest){
-        String[] nodesInfo = new String[nodesVisited.length + 2];
-        for(int i = 0; i < nodesVisited.length; i++)
-            nodesInfo[i] = nodesVisited[i];
+    public void sendOpenUDPMiddleMan(String[] nodesInfo, String dest){
+        String[] newInfo = new String[nodesInfo.length + 2];
+        for(int i = 0; i < nodesInfo.length; i++)
+            newInfo[i] = nodesInfo[i];
         
-        nodesInfo[nodesVisited.length] = this.state.getSelf();
-        nodesInfo[nodesVisited.length + 1] = dest;
+        newInfo[nodesInfo.length] = this.state.getSelf();
+        newInfo[nodesInfo.length + 1] = dest;
 
         NodeLink link = this.state.getLinkTo(dest);
-        Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.OPEN_UDP_MIDDLEMAN, nodesInfo));
+        Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.OPEN_UDP_MIDDLEMAN, newInfo));
         client.start();
     }
 
@@ -853,5 +862,25 @@ public class TCPHandler {
     public String[] getServers(String msg){
         String nodes = getSuffixFromPrefix(msg, "servers: ");
         return nodes.split(" ");
+    }
+
+    public int getNodeNr(String node){
+        char[] bytes = node.toCharArray();
+
+        StringBuilder sb = new StringBuilder();
+        for(int i = 1; i < bytes.length; i++)
+            sb.append(bytes[i]);
+
+        return Integer.parseInt(sb.toString());
+    }
+
+    public String getNodeNrName(String node){
+        char[] bytes = node.toCharArray();
+
+        StringBuilder sb = new StringBuilder();
+        for(int i = 1; i < bytes.length; i++)
+            sb.append(bytes[i]);
+
+        return sb.toString();
     }
 }

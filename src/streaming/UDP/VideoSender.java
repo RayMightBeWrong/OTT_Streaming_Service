@@ -18,10 +18,9 @@ public class VideoSender extends TimerTask{
     private byte[] buf;
     public static int bufLength = 15000;
 
-    public static int FRAME_PERIOD = 1;
+    public static int FRAME_PERIOD = 70;
     private int imagenb = 0;
     private VideoStream video;
-    private int MJPEG_TYPE = 26;
     private int VIDEO_LENGTH = 500;
     private boolean running;
     private StreamLink stream;
@@ -59,7 +58,7 @@ public class VideoSender extends TimerTask{
 
                 try {
                     int imageLength = video.getNextFrame(buf);
-                    RTPPacket RTPPacket = new RTPPacket(MJPEG_TYPE, imagenb, imagenb * FRAME_PERIOD, buf, imageLength);
+                    RTPPacket RTPPacket = new RTPPacket(this.stream.getStreamID(), imagenb, imagenb * FRAME_PERIOD, buf, imageLength);
                     int packetLength = RTPPacket.getlength();
   
                     byte[] packet_bits = new byte[packetLength];

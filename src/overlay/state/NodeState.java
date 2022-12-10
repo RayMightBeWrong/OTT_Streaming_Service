@@ -36,6 +36,10 @@ public class NodeState {
         return this.servers;
     }
 
+    public int getNrStreams(){
+        return this.streams.size();
+    }
+
     public String getSelf(){
         return this.node.getName();
     }
@@ -67,7 +71,7 @@ public class NodeState {
     public void addStream(StreamLink stream){
         this.lock.lock();
         try{
-            if (!this.streams.contains(stream));
+            if (!this.streams.contains(stream))
                 this.streams.add(stream);
         }
         finally{
@@ -78,8 +82,15 @@ public class NodeState {
     public void removeStream(StreamLink stream){
         this.lock.lock();
         try{
-            if (!this.streams.contains(stream));
-                this.streams.remove(stream);
+            for(int i = 0; i < this.streams.size(); i++){
+                StreamLink tmp = this.streams.get(i);
+                if (tmp != null){
+                    if (tmp.getReceivingNode().equals(stream.getReceivingNode()) && tmp.getServer().equals(stream.getServer())){
+                        this.streams.remove(i);
+                        this.streams.add(i, null);
+                    }
+                }
+            }
         }
         finally{
             this.lock.unlock();
@@ -104,7 +115,7 @@ public class NodeState {
     public void removeServer(String server){
         this.lock.lock();
         try{
-            if (!this.servers.contains(server));
+            if (!this.servers.contains(server))
                 this.servers.remove(server);
         }
         finally{
@@ -171,9 +182,26 @@ public class NodeState {
         StreamLink res = null;
 
         for(StreamLink stream: this.streams){
-            if (stream.getReceivingNode().equals(getSelf())){
-                res = stream;
-                break;
+            if (stream != null){
+                if (stream.getReceivingNode().equals(getSelf())){
+                    res = stream;
+                    break;
+                }
+            }
+        }
+
+        return res;
+    }
+
+    public StreamLink getStreamFromID(int ID){
+        StreamLink res = null;
+
+        for(StreamLink stream: this.streams){
+            if (stream != null){
+                if (stream.getStreamID() == ID){
+                    res = stream;
+                    break;
+                }
             }
         }
 
@@ -184,8 +212,23 @@ public class NodeState {
         StreamLink res = null;
 
         for(StreamLink stream: this.streams){
-            if (args[0].equals(stream.getServer()) && args[args.length - 1].equals(stream.getReceivingNode())){
-                res = stream;
+            if (stream != null){
+                if (args[0].equals(stream.getServer()) && args[args.length - 1].equals(stream.getReceivingNode())){
+                    res = stream;
+                    break;
+                }
+            }
+        }
+
+        return res;
+    }
+
+    public boolean anyActiveStream(){
+        boolean res = false;
+
+        for (StreamLink stream: this.streams){
+            if (stream != null){
+                res = true;
                 break;
             }
         }
@@ -215,8 +258,14 @@ public class NodeState {
             sb.append(server + " ");
         sb.append("\n\n");
         sb.append("Streams:\n");
-        for(StreamLink stream: this.streams)
-            sb.append(stream.toString() + "\n");
+        for(int i = 0; i < this.streams.size(); i++){
+            sb.append("\tSTREAM " + (i+1) + ":\n");
+            StreamLink stream = this.streams.get(i);
+            if (stream != null)
+                sb.append(stream.toString() + "\n");
+            else
+                sb.append("\t\tit's done\n");
+        }
 
         return sb.toString();
     }

@@ -81,8 +81,43 @@ public class OTTStreaming {
     }
 
     public static void main(String[] args){
-        if (args.length == 1)
-            new OTTStreaming(args[0]);
+        //if (args.length == 1)
+        //    new OTTStreaming(args[0]);
+        try{
+            InetAddress ip = InetAddress.getByName(args[0]);
+            TCPCommunicator client;
+            client = new TCPCommunicator(null, ip, TCPCommunicator.OPEN_STREAM_CLIENT);
+            client.run();
+
+            tmpMethod();
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    public static void tmpMethod() throws Exception{
+        byte[] cBuf = new byte[15000];
+
+        DatagramSocket RTPsocket = new DatagramSocket(RTP_PORT);
+        RTPsocket.setSoTimeout(5000);
+
+        while(true){
+            DatagramPacket rcvdp = new DatagramPacket(cBuf, 15000);
+
+            try{
+                RTPsocket.receive(rcvdp);
+
+                RTPPacket rtp_packet = new RTPPacket(rcvdp.getData(), rcvdp.getLength());
+                rtp_packet.printheader();
+            }
+            catch(InterruptedIOException iioe){
+                System.out.println("Nothing to read");
+            }
+            catch(IOException ioe){
+                System.out.println("Exception caught: " + ioe);
+            }
+        }
     }
 
     class RunButtonListener implements ActionListener{
@@ -113,7 +148,6 @@ public class OTTStreaming {
             TCPCommunicator client;
             client = new TCPCommunicator(null, connectorIP, TCPCommunicator.CANCEL_STREAM_CLIENT);
             client.run();
-            cTimer.start();
         }
     }
 

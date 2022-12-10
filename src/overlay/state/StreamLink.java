@@ -5,11 +5,17 @@ import java.util.List;
 
 public class StreamLink {
     private List<String> nodes;
+    private int id;
 
-    public StreamLink(String[] args){
+    public StreamLink(String[] args, int id){
+        this.id = id;
         this.nodes = new ArrayList<>();
         for(String s: args)
             this.nodes.add(s);
+    }
+
+    public int getStreamID(){
+        return this.id;
     }
 
     public List<String> getStream(){
@@ -52,7 +58,8 @@ public class StreamLink {
     public String toString(){
         StringBuilder sb = new StringBuilder();
 
-        sb.append("\tRECEIVING STREAM: " + getReceivingNode() + "\n\tGOING THROUGH:");
+        sb.append("\t\tSTREAM ID: " + this.id + "\n");
+        sb.append("\t\tRECEIVING STREAM: " + getReceivingNode() + "\n\t\tGOING THROUGH:");
         for(int i = 0; i < this.nodes.size() - 1; i++){
             sb.append(" " + this.nodes.get(i));
         }

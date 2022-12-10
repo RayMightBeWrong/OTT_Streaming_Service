@@ -183,7 +183,7 @@ public class TCPCommunicator extends Thread{
             sender.end();
         }
         catch (Exception e){
-            System.out.println("Can't reach bootstrapper!");
+
         }
     }
 }
