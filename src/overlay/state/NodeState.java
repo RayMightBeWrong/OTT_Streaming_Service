@@ -9,17 +9,23 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class NodeState {
     private Vertex node;
+    private InetAddress bstrapperIP;
     private DistancesTable table;
     private List<String> streams;
     private List<String> servers;
     private final ReentrantLock lock;
     
-    public NodeState(Vertex node){
+    public NodeState(Vertex node, InetAddress bstrapperIP){
         this.node = node;
+        this.bstrapperIP = bstrapperIP;
         this.table = new DistancesTable();
         this.streams = new ArrayList<>();
         this.servers = new ArrayList<>();
         this.lock = new ReentrantLock();
+    }
+
+    public InetAddress getBstrapperIP(){
+        return this.bstrapperIP;
     }
 
     public DistancesTable getTable(){
@@ -83,17 +89,12 @@ public class NodeState {
     public void addServer(String server){
         this.lock.lock();
         try{
-            boolean isPresent = false;
-            
-            for(String s: this.servers){
-                if(s.equals(server)){
-                    isPresent = true;
-                    break;
-                }
-            }
+            if(!server.equals("")){
+                boolean isPresent = isServer(server);
 
-            if (isPresent == false)
-                this.servers.add(server);
+                if (isPresent == false)
+                    this.servers.add(server);
+            }
         }
         finally{
             this.lock.unlock();
@@ -109,6 +110,19 @@ public class NodeState {
         finally{
             this.lock.unlock();
         }
+    }
+
+    public boolean isServer(String server){
+        boolean isPresent = false;
+            
+        for(String s: this.servers){
+            if(s.equals(server)){
+                isPresent = true;
+                break;
+            }
+        }
+
+        return isPresent;
     }
 
     public void setAdjState(String adj, int state){
@@ -151,6 +165,14 @@ public class NodeState {
 
     public boolean isLinkModified(String key, NodeLink newLink){
         return this.table.isLinkModified(key, newLink);
+    }
+
+    public List<String> handleClosedNode(String key){
+        setAdjState(key, Vertex.OFF);
+        if (isServer(key))
+            removeServer(key);
+
+        return this.table.handleClosedNode(key);
     }
 
     public String toString(){

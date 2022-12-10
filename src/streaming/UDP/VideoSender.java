@@ -22,7 +22,7 @@ public class VideoSender extends TimerTask{
     
 
     public VideoSender(InetAddress clientIP, String videoFileName){
-        this.buf = new byte[this.bufLength];
+        this.buf = new byte[bufLength];
         
         try {
             this.RTPsocket = new DatagramSocket();

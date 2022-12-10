@@ -61,44 +61,40 @@ public class TCPHandler {
             System.out.println("S: " + msg);
 
             if (isHello(msg)){
-                System.out.println("S: hello\n");
                 readHello(client, in, msg); break;
             }
             else if (isProbe(msg)){
-                System.out.println("S: probe\n");
                 readProbe(client, msg); break;
             }
             else if (isNewLink(msg)){
-                System.out.println("S: new link\n");
                 readNewLink(client, in, msg); break;
             }
             else if (isRoutes(msg)){
-                System.out.println("S: routes\n");
                 readRoutes(in, msg); break;
             }
             else if (isMonitoring(msg)){
-                System.out.println("S: monitoring\n");
                 readMonitoring(client, in, msg); break;
             }
             else if (isStreamClient(msg)){
-                System.out.println("S: client wants stream\n");
                 sendStreamRequest(); break;
             }
             else if (isAskStreaming(msg)){
-                System.out.println("S: stream request\n");
                 readAskStreaming(in, msg); break;
             }
             else if (isNewStreamSignal(msg)){
-                System.out.println("S: new stream\n");
                 readNewStreamSignal(in, msg); break;
             }
             else if (isOpenUDPMiddleMan(msg)){
-                System.out.println("S: open UDP middleman\n");
                 readOpenUDPMiddleMan(client, in, msg); break;
             }
             else if (isACKOpenUDPMiddleMan(msg)){
-                System.out.println("S: ack open UDP middleman\n");
                 readACKOpenUDPMiddleMan(client, in, msg); break;
+            }
+            else if (isNodeClosed(msg)){
+                readNodeClosed(client, msg); break;
+            }
+            else if (isRequestLink(msg)){
+                readRequestLink(client, msg); break;
             }
         }
 
@@ -158,6 +154,7 @@ public class TCPHandler {
         InetAddress viaInterface = null;
         int hops = 0;
         long cost = 0;
+        boolean isServer = false;
 
         while(true){
             msg = in.readLine();
@@ -175,12 +172,17 @@ public class TCPHandler {
                 NodeLink adj = this.state.getLinkTo(viaNode);
                 cost += adj.getCost();
             }
+            else if (isPrefixOf(msg, "is server")){
+                isServer = true;
+            }
             else if (isEnd(msg)){
                 List<InetAddress> ips = this.state.findAddressesFromAdjNode(viaNode);
                 viaInterface = ips.get(0);
                 NodeLink newLink = new NodeLink(name, viaNode, viaInterface, hops, cost);
                 if(this.state.isLinkModified(name, newLink)){
                     this.state.addLink(name, newLink);
+                    if (isServer)
+                        this.state.addServer(name);
                     sendNewLinkToAdjacents(name, viaNode);
 
                     System.out.println("\n__________________________________________________\n\nESTADO");
@@ -231,7 +233,16 @@ public class TCPHandler {
                 }
             }
             else if (isPrefixOf(msg, "servers")){
+                System.out.println("servers msg: " + msg);
                 String[] servers = getServers(msg);
+                int i = 0;
+                for(String server: servers){
+                    System.out.println(i + ": " + server);
+                    char[] bytes = server.toCharArray();
+                    for(int j = 0; j < bytes.length; j++)
+                        System.out.println(j + "|" + bytes[j]);
+                    i++;
+                }
                 for(String server: servers)
                     this.state.addServer(server);
             }
@@ -356,6 +367,33 @@ public class TCPHandler {
         }
     }
 
+    public void readNodeClosed(Socket client, String msg) throws Exception{
+        String closedNode = getSuffixFromPrefix(msg, "node closed: ");
+
+        boolean isAdj = false;
+        for(Map.Entry<String, List<InetAddress>> entry: this.state.getNodeAdjacents().entrySet())
+            if (entry.getKey().equals(closedNode)){
+                isAdj = true;
+                break;
+            }
+
+        if(this.state.getAdjState(closedNode) == Vertex.ON || isAdj == false){
+            String from = this.state.findAdjNodeFromAddress(client.getInetAddress());
+            List<String> lostNodes = this.state.handleClosedNode(closedNode);
+            sendNodeClosed(from, closedNode);
+            askLinkTo(lostNodes);
+        }
+    }
+
+    public void readRequestLink(Socket client, String msg){
+        String from = this.state.findAdjNodeFromAddress(client.getInetAddress());
+        String to = getSuffixFromPrefix(msg, "? ");
+
+        if (this.state.getLinkTo(to) != null){
+            
+        }
+    }
+
 
     /* THREAD FUNCTIONS */
 
@@ -447,6 +485,13 @@ public class TCPHandler {
         else
             client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.PROBE_REGULAR));
 
+        client.start();
+        client.join();
+    }
+
+    public void sendNewLinkToAdjacent(String fromNode, String to) throws InterruptedException{
+        NodeLink link = this.state.getLinkTo(to);
+        Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.SEND_NEW_LINK, fromNode));
         client.start();
         client.join();
     }
@@ -550,10 +595,40 @@ public class TCPHandler {
         client.start();
     }
 
+    public void sendNodeClosed(String from, String node) throws Exception{
+        Map<String, Integer> adjsState = this.state.getNodeAdjacentsState();
+        Map<String, List<InetAddress>> adjs = this.state.getNodeAdjacents();
+
+        for(Map.Entry<String, Integer> entry: adjsState.entrySet()){
+            if (entry.getValue() == Vertex.ON && !from.equals(entry.getKey())){
+                List<InetAddress> ips = adjs.get(entry.getKey());
+                Thread client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.CLOSED_NODE, node));
+                client.start();
+                client.join();
+            }
+        }
+    }
+
+    public void askLinkTo(List<String> lostLinks) throws Exception{
+        Map<String, Integer> adjsState = this.state.getNodeAdjacentsState();
+        Map<String, List<InetAddress>> adjs = this.state.getNodeAdjacents();
+
+        for(Map.Entry<String, Integer> entry: adjsState.entrySet()){
+            if (entry.getValue() == Vertex.ON){
+                List<InetAddress> ips = adjs.get(entry.getKey());
+                for(String node: lostLinks){
+                    Thread client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.REQUEST_LINK, node));
+                    client.start();
+                    client.join();
+                }
+            }
+        }
+    }
+
 
     /* AUXILIARY READ FUNCTIONS */
 
-    public boolean isPrefixOf(String msg, String prefix){
+    public static boolean isPrefixOf(String msg, String prefix){
         boolean res = true;
         char[] msgv = msg.toCharArray();
         char[] pv = prefix.toCharArray();
@@ -609,6 +684,14 @@ public class TCPHandler {
         return isPrefixOf(msg, "ack open UDP middleman");
     }
 
+    public boolean isNodeClosed(String msg){
+        return isPrefixOf(msg, "node closed");
+    }
+
+    public boolean isRequestLink(String msg){
+        return isPrefixOf(msg, "?");
+    }
+
     public boolean isEnd(String msg){
         return isPrefixOf(msg, "end");
     }
@@ -626,7 +709,7 @@ public class TCPHandler {
     }
 
 
-    public String getSuffixFromPrefix(String msg, String prefix){
+    public static String getSuffixFromPrefix(String msg, String prefix){
         StringBuilder sb = new StringBuilder();
         char[] msgv = msg.toCharArray();
 

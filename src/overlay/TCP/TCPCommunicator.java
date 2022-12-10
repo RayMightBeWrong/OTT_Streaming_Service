@@ -3,7 +3,9 @@ package overlay.TCP;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.List;
 
+import overlay.bootstrapper.BStrapper;
 import overlay.state.NodeLink;
 import overlay.state.NodeState;
 
@@ -30,6 +32,8 @@ public class TCPCommunicator extends Thread{
     public static final int NEW_STREAM = 13;
     public static final int OPEN_UDP_MIDDLEMAN = 14;
     public static final int ACK_OPEN_UDP_MIDDLEMAN = 15;
+    public static final int CLOSED_NODE = 16;
+    public static final int REQUEST_LINK = 17;
 
 
     public TCPCommunicator(NodeState state, InetAddress neighbor, int behaviour){
@@ -70,8 +74,11 @@ public class TCPCommunicator extends Thread{
                     sender.probe(false); break;
 
                 case SEND_NEW_LINK:
-                    NodeLink link = this.state.getLinkTo((String) extraInfo);
-                    sender.sendNewLink(link, this.state.getSelf());
+                    String dest = (String) extraInfo;
+                    NodeLink link = this.state.getLinkTo(dest);
+                    boolean isServer = this.state.isServer(dest);
+
+                    sender.sendNewLink(link, this.state.getSelf(), isServer);
                     break;
                 
                 case SEND_ROUTES:
@@ -123,13 +130,44 @@ public class TCPCommunicator extends Thread{
                     String[] newArgs = (String[]) extraInfo;
 
                     sender.ackOpenUDPMiddleManSignal(newArgs); 
-                    break;       
+                    break;
+                
+                case CLOSED_NODE:
+                    String closedNode = (String) extraInfo;
+                    sender.warnNodeClosed(closedNode);
+                    break;
+
+                case REQUEST_LINK:
+                    String linkTo = (String) extraInfo;
+                    sender.requestLink(linkTo);
+                    break;
             }
 
             socket.close();
 
         } catch (Exception e) {
+            warnNodeClosed(this.neighbor);
             System.out.println("Connection refused with " + neighbor);
+        }
+    }
+
+    public void warnNodeClosed(InetAddress closedNodeIP){
+        try{
+            InetAddress bstrapper = this.state.getBstrapperIP();
+            if (bstrapper == null){
+                List<InetAddress> myIPs = this.state.getSelfIPs();
+                bstrapper = myIPs.get(0);
+            }
+            Socket socket = new Socket(bstrapper, BStrapper.PORT);
+            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+            TCPMessageSender sender = new TCPMessageSender(out);
+
+            String closedNode = this.state.findAdjNodeFromAddress(closedNodeIP);
+            sender.warnNodeClosed(closedNode);
+            sender.end();
+        }
+        catch (Exception e){
+            System.out.println("Can't reach bootstrapper!");
         }
     }
 }

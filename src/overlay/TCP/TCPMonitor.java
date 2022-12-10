@@ -28,10 +28,7 @@ public class TCPMonitor extends TimerTask{
                 
                 try {
                     client.join();
-                } catch (InterruptedException e) {
-                    // TODO - turn off adjacente
-                    //this.state.turnOffAdj();
-                }
+                } catch (Exception e) {}
             }
         }
     }

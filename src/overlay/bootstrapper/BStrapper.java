@@ -10,6 +10,8 @@ import java.net.Socket;
 import java.util.List;
 import java.util.Map;
 
+import overlay.TCP.TCPCommunicator;
+import overlay.TCP.TCPHandler;
 import overlay.TCP.TCPMessageSender;
 import overlay.state.Graph;
 import overlay.state.Vertex;
@@ -53,7 +55,27 @@ public class BStrapper extends Thread{
                 Map<String, Integer> adjsState = this.graph.getNodeAdjacentsState(nodeName);
                 sender.initialMessageBootstrapper(nodeName, ips, adjs, adjsState);
             }
+            else if (TCPHandler.isPrefixOf(msg, "node closed")){
+                String closedNode = TCPHandler.getSuffixFromPrefix(msg, "node closed: ");
+
+                if (this.graph.getNodeState(closedNode) == Vertex.ON){
+                    Map<String, List<InetAddress>> adjs = this.graph.getNodeAdjacents(closedNode);
+                    Map<String, Integer> adjsState = this.graph.getNodeAdjacentsState(closedNode);
+
+                    for(Map.Entry<String, Integer> entry: adjsState.entrySet()){
+                        if (entry.getValue() == Vertex.ON){
+                            InetAddress ip = adjs.get(entry.getKey()).get(0);
+                            Thread warnThread = new Thread(new TCPCommunicator(null, ip, TCPCommunicator.CLOSED_NODE, closedNode));
+                            warnThread.start();
+                        }
+                    }
+
+                    this.graph.setNodeState(closedNode, Vertex.OFF);
+                }
+            }
             else if (msg.equals("ack"))
+                break;
+            else if (msg.equals("end"))
                 break;
         }
 

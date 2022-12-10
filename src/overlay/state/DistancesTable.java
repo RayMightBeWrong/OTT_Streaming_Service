@@ -1,6 +1,7 @@
 package overlay.state;
 
 import java.net.InetAddress;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,6 +68,22 @@ public class DistancesTable {
         }
 
         return false;
+    }
+
+    public List<String> handleClosedNode(String key){
+        List<String> res = new ArrayList<>();
+
+        if (this.table.containsKey(key))
+            this.table.remove(key);
+        
+        for(Map.Entry<String, NodeLink> entry: this.table.entrySet())
+            if (entry.getValue().getViaNode().equals(key))
+                res.add(entry.getKey());
+
+        for(String node: res)
+            this.table.remove(node);
+
+        return res;
     }
 
     public String toString(){

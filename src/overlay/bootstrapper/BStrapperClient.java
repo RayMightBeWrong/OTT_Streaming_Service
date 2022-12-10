@@ -20,13 +20,15 @@ public class BStrapperClient{
 
     public static NodeState readInitialMsg(String bstrapper){
         try {
-            Socket socket = new Socket(InetAddress.getByName(bstrapper), BStrapper.PORT);
+            InetAddress bstrapperIP = InetAddress.getByName(bstrapper);
+
+            Socket socket = new Socket(bstrapperIP, BStrapper.PORT);
             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             TCPMessageSender sender = new TCPMessageSender(out);
 
             sender.hello();
-            NodeState state = getInitialMsg(in, socket, sender);
+            NodeState state = getInitialMsg(in, socket, sender, bstrapperIP);
             socket.close();
 
             return state;
@@ -38,7 +40,7 @@ public class BStrapperClient{
         }
     }
 
-    public static NodeState getInitialMsg(BufferedReader in, Socket socket, TCPMessageSender sender) throws IOException{
+    public static NodeState getInitialMsg(BufferedReader in, Socket socket, TCPMessageSender sender, InetAddress bstrapperIP) throws IOException{
         String name = "";
         List<InetAddress> ips = new ArrayList<>();
         Map<String, List<InetAddress>> adjs = new HashMap<>();
@@ -79,6 +81,6 @@ public class BStrapperClient{
         }
 
         Vertex v = new Vertex(name, ips, adjs, adjsState, Vertex.ON);
-        return new NodeState(v);
+        return new NodeState(v, bstrapperIP);
     }
 }

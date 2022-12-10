@@ -87,11 +87,13 @@ public class TCPMessageSender {
         sendMessage(msg);
     }
 
-    public void sendNewLink(NodeLink link, String self){
+    public void sendNewLink(NodeLink link, String self, boolean isServer){
         sendMessage("new link: " + link.getDest());
         sendMessage("via node: " + self);
         sendMessage("hops: " + link.getHops());
         sendMessage("cost: " + link.getCost());
+        if (isServer)
+            sendMessage("is server");
         end();
     }
 
@@ -114,8 +116,8 @@ public class TCPMessageSender {
         sb.append("servers:");
         for(String server: state.getServers())
             sb.append(" " + server);
+    
         sendMessage(sb.toString());
-
         end();
     }
 
@@ -184,6 +186,14 @@ public class TCPMessageSender {
         
         sendMessage(msg.toString());
         end();
+    }
+
+    public void warnNodeClosed(String closedNode){
+        sendMessage("node closed: " + closedNode);
+    }
+
+    public void requestLink(String to){
+        sendMessage("? " + to);
     }
 
     public void end(){

@@ -40,6 +40,14 @@ public class Graph {
         return nodeName;
     }
 
+    public int getNodeState(String key){
+        if (this.nodes.containsKey(key)){
+            Vertex v = this.nodes.get(key);
+            return v.getState();
+        }
+        return Vertex.OFF;
+    }
+
     public void setNodeState(String key, int state){
         if (this.nodes.containsKey(key)){
             Vertex v = this.nodes.get(key);
@@ -77,7 +85,7 @@ public class Graph {
         Map<String, List<InetAddress>> adjs = getNodeAdjacents(self);
         Map<String, Integer> adjsState = getNodeAdjacentsState(self);
         Vertex v = new Vertex(self, ips, adjs, adjsState, Vertex.ON);
-        return new NodeState(v);
+        return new NodeState(v, null);
     }
 
     public String toString(){
