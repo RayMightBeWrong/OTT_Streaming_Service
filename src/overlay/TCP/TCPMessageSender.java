@@ -199,6 +199,20 @@ public class TCPMessageSender {
         sendMessage(sb.toString());
     }
 
+    public void cancelStreamClient(){
+        sendMessage("cancel stream client");
+    }
+
+    public void cancelStream(String[] stream){
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("cancel stream:");
+        for(String node: stream)
+            sb.append(" " + node);
+        
+        sendMessage(sb.toString());
+    }
+
     public void end(){
         sendMessage("end");
     }

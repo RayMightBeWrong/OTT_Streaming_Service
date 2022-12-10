@@ -5,15 +5,13 @@ import java.util.Timer;
 
 public class UDPServer extends Thread{
     public static final int PORT = 25000;
-    private InetAddress ip;
     private Timer timer;
     private boolean running;
     private VideoSender sender;
 
-    public UDPServer(InetAddress ip){
-        this.ip = ip;
+    public UDPServer(InetAddress ownIP, InetAddress clientIP){
         this.running = true;
-        this.sender = new VideoSender(ip, "movie.Mjpeg");
+        this.sender = new VideoSender(ownIP, clientIP, "movie.Mjpeg");
     }
     
     public void run(){
@@ -33,7 +31,7 @@ public class UDPServer extends Thread{
         }
     }
 
-    public void resumeSender(){
-        this.running = true;
+    public void cancelSender(){
+        timer.cancel();
     }
 }

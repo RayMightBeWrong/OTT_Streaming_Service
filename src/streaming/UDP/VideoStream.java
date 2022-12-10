@@ -4,11 +4,11 @@ import java.io.FileInputStream;
 
 public class VideoStream {
     private FileInputStream fis;
-    private int frame_nb;
+    //private int frame_nb;
 
     public VideoStream(String filename) throws Exception{
         fis = new FileInputStream(filename);
-        frame_nb = 0;
+    //    frame_nb = 0;
     }
 
     public int getNextFrame(byte[] frame) throws Exception{

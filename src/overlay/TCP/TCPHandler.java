@@ -106,6 +106,12 @@ public class TCPHandler {
             else if (isPauseStream(msg)){
                 readPauseStream(msg); break;
             }
+            else if (isCancelStreamClient(msg)){
+                sendCancelStream(); break;
+            }
+            else if (isCancelStream(msg)){
+                readCancelStream(msg); break;
+            }
         }
 
         client.close();
@@ -399,12 +405,8 @@ public class TCPHandler {
         String[] args = getNodesVisited(msg, "pause stream: ");
 
         if (this.state.getSelf().equals(args[0])){
-            //String from = this.state.findAdjNodeFromAddress(client.getInetAddress());
             StreamLink stream = this.state.getStreamFromArgs(args);
             this.senders.get(stream.getReceivingNode()).pauseSender();
-            //StreamLink stream = new StreamLink(args);
-            //this.state.addStream(stream);
-            //startVideoSender(from);
         }
         else{
             StreamLink stream = this.state.getStreamFromArgs(args);
@@ -414,6 +416,26 @@ public class TCPHandler {
             Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.PAUSE_STREAMING, args));
             client.run();
         }
+    }
+
+    public void readCancelStream(String msg) throws Exception{
+        String[] args = getNodesVisited(msg, "cancel stream: ");
+
+        StreamLink stream = this.state.getStreamFromArgs(args);
+
+        if (this.state.getSelf().equals(args[0])){
+            this.senders.get(stream.getReceivingNode()).cancelSender();
+            this.senders.remove(stream.getReceivingNode());
+        }
+        else{
+            String nextNode = stream.findNextNode(this.state.getSelf(), true);
+            NodeLink link = this.state.getLinkTo(nextNode);
+
+            Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.CANCEL_STREAM, args));
+            client.run();
+        }
+
+        this.state.removeStream(stream);
     }
 
 
@@ -453,8 +475,9 @@ public class TCPHandler {
     }
 
     public void startVideoSender(StreamLink stream, String dest){
+        List<InetAddress> ips = this.state.getSelfIPs();
         NodeLink link = this.state.getLinkTo(dest);
-        UDPServer UDPServer = new UDPServer(link.getViaInterface());
+        UDPServer UDPServer = new UDPServer(ips.get(0), link.getViaInterface());
         UDPServer.start();
         this.senders.put(stream.getReceivingNode(), UDPServer);
     }
@@ -508,11 +531,15 @@ public class TCPHandler {
         client.run();
     }
 
-    public void sendPauseStreaming(String rcvStream){
-        // TODO - fix isto com a rota
-        NodeLink link = this.state.getClosestServer();
-        Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.PAUSE_STREAMING, rcvStream));
+    public void sendCancelStream(){
+        StreamLink myStream = this.state.getMyStream();
+        String[] args = myStream.convertLinkToArgs();
+        String nextNode = myStream.findNextNode(this.state.getSelf(), true);
+        NodeLink link = this.state.getLinkTo(nextNode);
+
+        Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.CANCEL_STREAM, args));
         client.run();
+        this.state.removeStream(myStream);
     }
 
 
@@ -721,6 +748,14 @@ public class TCPHandler {
 
     public boolean isPauseStream(String msg){
         return isPrefixOf(msg, "pause stream");
+    }
+
+    public boolean isCancelStreamClient(String msg){
+        return isPrefixOf(msg, "cancel stream client");
+    }
+
+    public boolean isCancelStream(String msg){
+        return isPrefixOf(msg, "cancel stream");
     }
 
     public boolean isEnd(String msg){

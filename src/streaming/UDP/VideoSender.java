@@ -6,10 +6,13 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.TimerTask;
 
+import overlay.TCP.TCPCommunicator;
+
 public class VideoSender extends TimerTask{
     private DatagramPacket senddp;
     private DatagramSocket RTPsocket;
     private int RTP_PORT = 25000;
+    private InetAddress ownIP;
     private InetAddress clientIP;
     private byte[] buf;
     public static int bufLength = 15000;
@@ -22,12 +25,13 @@ public class VideoSender extends TimerTask{
     private boolean running;
     
 
-    public VideoSender(InetAddress clientIP, String videoFileName){
+    public VideoSender(InetAddress ownIP, InetAddress clientIP, String videoFileName){
         this.buf = new byte[bufLength];
         this.running = true;
         
         try {
             this.RTPsocket = new DatagramSocket();
+            this.ownIP = ownIP;
             this.clientIP = clientIP;
             this.video = new VideoStream(videoFileName);
         } catch (SocketException e) {
@@ -47,31 +51,34 @@ public class VideoSender extends TimerTask{
 
     public void run(){
         if(running){
-        if (imagenb < VIDEO_LENGTH){
-            imagenb++;
+            if (imagenb < VIDEO_LENGTH){
+                imagenb++;
 
-            try {
-                int imageLength = video.getNextFrame(buf);
-                RTPPacket RTPPacket = new RTPPacket(MJPEG_TYPE, imagenb, imagenb * FRAME_PERIOD, buf, imageLength);
-                int packetLength = RTPPacket.getlength();
+                try {
+                    int imageLength = video.getNextFrame(buf);
+                    RTPPacket RTPPacket = new RTPPacket(MJPEG_TYPE, imagenb, imagenb * FRAME_PERIOD, buf, imageLength);
+                    int packetLength = RTPPacket.getlength();
   
-                byte[] packet_bits = new byte[packetLength];
-                RTPPacket.getpacket(packet_bits);
+                    byte[] packet_bits = new byte[packetLength];
+                    RTPPacket.getpacket(packet_bits);
   
-                senddp = new DatagramPacket(packet_bits, packetLength, clientIP, RTP_PORT);
-                RTPsocket.send(senddp);
+                    senddp = new DatagramPacket(packet_bits, packetLength, clientIP, RTP_PORT);
+                    RTPsocket.send(senddp);
   
-                //System.out.println("Send frame #"+imagenb);
-                //RTPPacket.printheader();
+                    //System.out.println("Send frame #"+imagenb);
+                    RTPPacket.printheader();
+                }
+                catch(Exception ex){
+                    System.out.println("Exception caught: "+ex);
+                    System.exit(0);
+                }
             }
-            catch(Exception ex){
-                System.out.println("Exception caught: "+ex);
-                System.exit(0);
+            else{
+                // TODO - terminar stream
+                //TCPCommunicator client;
+                //client = new TCPCommunicator(null, this.ownIP, TCPCommunicator.OPEN_STREAM_CLIENT);
+                //client.run();
             }
-        }
-        else{
-            // TODO - começar de novo
-        }
         }
     }
 }

@@ -43,6 +43,9 @@ public class OTTStreaming {
 
             frame.addWindowListener(new WindowAdapter() {
                 public void windowClosing(WindowEvent e){
+                    TCPCommunicator client;
+                    client = new TCPCommunicator(null, connectorIP, TCPCommunicator.CANCEL_STREAM_CLIENT);
+                    client.run();
                     System.exit(0);
                 }
             });
