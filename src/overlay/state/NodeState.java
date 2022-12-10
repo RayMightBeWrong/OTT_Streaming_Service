@@ -11,7 +11,7 @@ public class NodeState {
     private Vertex node;
     private InetAddress bstrapperIP;
     private DistancesTable table;
-    private List<String> streams;
+    private List<StreamLink> streams;
     private List<String> servers;
     private final ReentrantLock lock;
     
@@ -64,22 +64,22 @@ public class NodeState {
         }
     }
 
-    public void addStream(String dest){
+    public void addStream(StreamLink stream){
         this.lock.lock();
         try{
-            if (!this.streams.contains(dest));
-                this.streams.add(dest);
+            if (!this.streams.contains(stream));
+                this.streams.add(stream);
         }
         finally{
             this.lock.unlock();
         }
     }
 
-    public void removeStream(String dest){
+    public void removeStream(StreamLink stream){
         this.lock.lock();
         try{
-            if (!this.streams.contains(dest));
-                this.streams.remove(dest);
+            if (!this.streams.contains(stream));
+                this.streams.remove(stream);
         }
         finally{
             this.lock.unlock();
@@ -167,6 +167,32 @@ public class NodeState {
         return this.table.isLinkModified(key, newLink);
     }
 
+    public StreamLink getMyStream(){
+        StreamLink res = null;
+
+        for(StreamLink stream: this.streams){
+            if (stream.getReceivingNode().equals(getSelf())){
+                res = stream;
+                break;
+            }
+        }
+
+        return res;
+    }
+
+    public StreamLink getStreamFromArgs(String[] args){
+        StreamLink res = null;
+
+        for(StreamLink stream: this.streams){
+            if (args[0].equals(stream.getServer()) && args[args.length - 1].equals(stream.getReceivingNode())){
+                res = stream;
+                break;
+            }
+        }
+
+        return res;
+    }
+
     public List<String> handleClosedNode(String key){
         setAdjState(key, Vertex.OFF);
         if (isServer(key))
@@ -189,8 +215,8 @@ public class NodeState {
             sb.append(server + " ");
         sb.append("\n\n");
         sb.append("Streams:\n");
-        for(String stream: this.streams)
-            sb.append("\tRECEIVING STREAM: " + stream + "\n");
+        for(StreamLink stream: this.streams)
+            sb.append(stream.toString() + "\n");
 
         return sb.toString();
     }

@@ -15,7 +15,8 @@ import streaming.UDP.RTPPacket;
 
 public class OTTStreaming {
     private JFrame frame;
-    private JButton playButton;
+    private JButton runButton;
+    private JButton pausePlayButton;
     private JPanel mainPanel;
     private JPanel buttonPanel;
     private JLabel iconLabel;
@@ -34,7 +35,8 @@ public class OTTStreaming {
         try{
             connectorIP = InetAddress.getByName(ipName);
             frame = new JFrame("STREAM CLIENT");
-            playButton = new JButton("PLAY");
+            runButton = new JButton("RUN");
+            pausePlayButton = new JButton("PAUSE / PLAY");
             mainPanel = new JPanel();
             buttonPanel = new JPanel();
             iconLabel = new JLabel();
@@ -46,9 +48,11 @@ public class OTTStreaming {
             });
 
             buttonPanel.setLayout(new GridLayout(1, 0));
-            buttonPanel.add(playButton);
+            buttonPanel.add(runButton);
+            buttonPanel.add(pausePlayButton);
 
-            playButton.addActionListener(new PlayButtonListener());
+            runButton.addActionListener(new RunButtonListener());
+            pausePlayButton.addActionListener(new PausePlayButtonListener());
 
             iconLabel.setIcon(null);
             mainPanel.setLayout(null);
@@ -77,12 +81,23 @@ public class OTTStreaming {
             new OTTStreaming(args[0]);
     }
 
-    class PlayButtonListener implements ActionListener{
+    class RunButtonListener implements ActionListener{
         public void actionPerformed(ActionEvent e){
             System.out.println("PLAY button pressed!");
 
             TCPCommunicator client;
             client = new TCPCommunicator(null, connectorIP, TCPCommunicator.OPEN_STREAM_CLIENT);
+            client.run();
+            cTimer.start();
+        }
+    }
+
+    class PausePlayButtonListener implements ActionListener{
+        public void actionPerformed(ActionEvent e){
+            System.out.println("PAUSE button pressed!");
+
+            TCPCommunicator client;
+            client = new TCPCommunicator(null, connectorIP, TCPCommunicator.PAUSE_STREAM_CLIENT);
             client.run();
             cTimer.start();
         }
@@ -96,8 +111,8 @@ public class OTTStreaming {
                 RTPsocket.receive(rcvdp);
 
                 RTPPacket rtp_packet = new RTPPacket(rcvdp.getData(), rcvdp.getLength());
-                System.out.println("Got RTP packet with SeqNum # "+rtp_packet.getsequencenumber()+" TimeStamp "+rtp_packet.gettimestamp()+" ms, of type "+rtp_packet.getpayloadtype());
-                rtp_packet.printheader();
+                //System.out.println("Got RTP packet with SeqNum # "+rtp_packet.getsequencenumber()+" TimeStamp "+rtp_packet.gettimestamp()+" ms, of type "+rtp_packet.getpayloadtype());
+                //rtp_packet.printheader();
 
                 int payload_length = rtp_packet.getpayload_length();
                 byte [] payload = new byte[payload_length];

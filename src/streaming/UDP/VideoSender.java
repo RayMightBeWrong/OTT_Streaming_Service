@@ -19,10 +19,12 @@ public class VideoSender extends TimerTask{
     private VideoStream video;
     private int MJPEG_TYPE = 26;
     private int VIDEO_LENGTH = 500;
+    private boolean running;
     
 
     public VideoSender(InetAddress clientIP, String videoFileName){
         this.buf = new byte[bufLength];
+        this.running = true;
         
         try {
             this.RTPsocket = new DatagramSocket();
@@ -35,14 +37,22 @@ public class VideoSender extends TimerTask{
         }
     }
 
+    public void pause(){
+        this.running = false;
+    }
+
+    public void resume(){
+        this.running = true;
+    }
+
     public void run(){
+        if(running){
         if (imagenb < VIDEO_LENGTH){
             imagenb++;
 
             try {
                 int imageLength = video.getNextFrame(buf);
                 RTPPacket RTPPacket = new RTPPacket(MJPEG_TYPE, imagenb, imagenb * FRAME_PERIOD, buf, imageLength);
-  
                 int packetLength = RTPPacket.getlength();
   
                 byte[] packet_bits = new byte[packetLength];
@@ -51,8 +61,8 @@ public class VideoSender extends TimerTask{
                 senddp = new DatagramPacket(packet_bits, packetLength, clientIP, RTP_PORT);
                 RTPsocket.send(senddp);
   
-                System.out.println("Send frame #"+imagenb);
-                RTPPacket.printheader();
+                //System.out.println("Send frame #"+imagenb);
+                //RTPPacket.printheader();
             }
             catch(Exception ex){
                 System.out.println("Exception caught: "+ex);
@@ -61,6 +71,7 @@ public class VideoSender extends TimerTask{
         }
         else{
             // TODO - começar de novo
+        }
         }
     }
 }

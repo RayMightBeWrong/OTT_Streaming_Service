@@ -29,11 +29,12 @@ public class TCPCommunicator extends Thread{
     public static final int OPEN_STREAM_CLIENT = 10;
     public static final int ASK_STREAMING = 11;
     public static final int REDIRECT_ASK_STREAMING = 12;
-    public static final int NEW_STREAM = 13;
     public static final int OPEN_UDP_MIDDLEMAN = 14;
     public static final int ACK_OPEN_UDP_MIDDLEMAN = 15;
     public static final int CLOSED_NODE = 16;
     public static final int REQUEST_LINK = 17;
+    public static final int PAUSE_STREAM_CLIENT = 18;
+    public static final int PAUSE_STREAMING = 19;
 
 
     public TCPCommunicator(NodeState state, InetAddress neighbor, int behaviour){
@@ -101,18 +102,7 @@ public class TCPCommunicator extends Thread{
 
                 case REDIRECT_ASK_STREAMING:
                     String[] args = (String[]) extraInfo;
-                    sender.sendAskStreaming(this.state, args); 
-                    break;
-
-                case NEW_STREAM:
-                    String[] nodesInfo = (String[]) extraInfo;
-                    String[] visited = new String[nodesInfo.length - 1];
-                    for(int i = 0; i < nodesInfo.length - 1; i++){
-                        visited[i] = nodesInfo[i];
-                    }
-                    String newDest = nodesInfo[nodesInfo.length - 1];
-
-                    sender.sendNewStreamSignal(visited, newDest); 
+                    sender.sendAskStreaming(args); 
                     break;
 
                 case OPEN_UDP_MIDDLEMAN:
@@ -141,6 +131,13 @@ public class TCPCommunicator extends Thread{
                     String linkTo = (String) extraInfo;
                     sender.requestLink(linkTo);
                     break;
+
+                case PAUSE_STREAM_CLIENT:
+                    sender.pauseStreamClient(); break;
+
+                case PAUSE_STREAMING:
+                    String[] stream = (String[]) extraInfo;
+                    sender.pauseStream(stream); break;
             }
 
             socket.close();

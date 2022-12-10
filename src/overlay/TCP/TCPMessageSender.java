@@ -150,20 +150,9 @@ public class TCPMessageSender {
         end();
     }
 
-    public void sendAskStreaming(NodeState state, String[] args){
+    public void sendAskStreaming(String[] args){
         sendMessage("want streaming: " + args[0]);
         sendMessage("from server: " + args[1]);
-        end();
-    }
-
-    public void sendNewStreamSignal(String[] nodesVisited, String node){
-        sendMessage("sending stream to: " + node);
-
-        StringBuilder msg = new StringBuilder("sent to:");
-        for(String visited: nodesVisited)
-            msg.append(" " + visited);
-
-        sendMessage(msg.toString());
         end();
     }
 
@@ -194,6 +183,20 @@ public class TCPMessageSender {
 
     public void requestLink(String to){
         sendMessage("? " + to);
+    }
+
+    public void pauseStreamClient(){
+        sendMessage("pause stream client");
+    }
+
+    public void pauseStream(String[] stream){
+        StringBuilder sb = new StringBuilder();
+        
+        sb.append("pause stream:");
+        for(String node: stream)
+            sb.append(" " + node);
+        
+        sendMessage(sb.toString());
     }
 
     public void end(){

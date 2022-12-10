@@ -22,10 +22,7 @@ public class UDPClient extends Thread{
                 byte[] buf = new byte[VideoSender.bufLength];
                 DatagramPacket packet = new DatagramPacket(buf, buf.length);
 
-                socket.receive(packet);
-                RTPPacket rtp_packet = new RTPPacket(packet.getData(), packet.getLength());
-                System.out.println("Got RTP packet with SeqNum # "+rtp_packet.getsequencenumber()+" TimeStamp "+rtp_packet.gettimestamp()+" ms, of type "+rtp_packet.getpayloadtype());
-            
+                socket.receive(packet);            
                 DatagramPacket senddp = new DatagramPacket(buf, buf.length, ip, OTTStreaming.RTP_PORT);
                 sender.send(senddp);
             }
