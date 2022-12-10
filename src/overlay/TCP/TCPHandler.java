@@ -170,7 +170,8 @@ public class TCPHandler {
                 String costString = getSuffixFromPrefix(msg, "cost: ");
                 cost = Long.parseLong(costString);
                 NodeLink adj = this.state.getLinkTo(viaNode);
-                cost += adj.getCost();
+                if (adj != null)
+                    cost += adj.getCost();
             }
             else if (isPrefixOf(msg, "is server")){
                 isServer = true;
