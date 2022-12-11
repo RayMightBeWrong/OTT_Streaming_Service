@@ -3,6 +3,7 @@ package streaming.UDP;
 import java.net.InetAddress;
 import java.util.Timer;
 
+import overlay.state.NodeState;
 import overlay.state.StreamLink;
 
 public class UDPServer extends Thread{
@@ -11,9 +12,9 @@ public class UDPServer extends Thread{
     private boolean running;
     private VideoSender sender;
 
-    public UDPServer(InetAddress ownIP, InetAddress clientIP, StreamLink stream){
+    public UDPServer(InetAddress ownIP, StreamLink stream, NodeState state){
         this.running = true;
-        this.sender = new VideoSender(ownIP, clientIP, "movie.Mjpeg", stream);
+        this.sender = new VideoSender(ownIP, "movie.Mjpeg", stream, state);
     }
     
     public void run(){

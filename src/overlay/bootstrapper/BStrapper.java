@@ -69,7 +69,7 @@ public class BStrapper extends Thread{
                             warnThread.start();
                         }
                     }
-
+                    
                     this.graph.setNodeState(closedNode, Vertex.OFF);
                 }
             }

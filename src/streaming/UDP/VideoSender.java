@@ -7,6 +7,8 @@ import java.net.SocketException;
 import java.util.TimerTask;
 
 import overlay.TCP.TCPCommunicator;
+import overlay.state.NodeLink;
+import overlay.state.NodeState;
 import overlay.state.StreamLink;
 
 public class VideoSender extends TimerTask{
@@ -14,28 +16,28 @@ public class VideoSender extends TimerTask{
     private DatagramSocket RTPsocket;
     private int RTP_PORT = 25000;
     private InetAddress ownIP;
-    private InetAddress clientIP;
     private byte[] buf;
     public static int bufLength = 15000;
 
-    public static int FRAME_PERIOD = 42;
+    public static int FRAME_PERIOD = 100;
     private int imagenb = 0;
     private VideoStream video;
-    private int VIDEO_LENGTH = 500;
+    public static int VIDEO_LENGTH = 500;
     private boolean running;
     private StreamLink stream;
+    private NodeState state;
     
 
-    public VideoSender(InetAddress ownIP, InetAddress clientIP, String videoFileName, StreamLink stream){
+    public VideoSender(InetAddress ownIP, String videoFileName, StreamLink stream, NodeState state){
         this.buf = new byte[bufLength];
         this.running = true;
         
         try {
             this.RTPsocket = new DatagramSocket();
             this.ownIP = ownIP;
-            this.clientIP = clientIP;
             this.stream = stream;
             this.video = new VideoStream(videoFileName);
+            this.state = state;
         } catch (SocketException e) {
             System.out.println("Servidor: erro no socket: " + e.getMessage());
         } catch (Exception e) {
@@ -64,14 +66,29 @@ public class VideoSender extends TimerTask{
                     byte[] packet_bits = new byte[packetLength];
                     RTPPacket.getpacket(packet_bits);
   
-                    senddp = new DatagramPacket(packet_bits, packetLength, clientIP, RTP_PORT);
-                    RTPsocket.send(senddp);
+                    int streamID = RTPPacket.getStreamID();
+                    StreamLink stream = this.state.getStreamFromID(streamID);
+
+                    if (stream.getActive() == true){
+                        String nextNode = stream.findNextNode(this.state.getSelf(), false);
+                        NodeLink link = this.state.getLinkTo(nextNode);
+                        if (link != null){
+                            senddp = new DatagramPacket(packet_bits, packetLength, link.getViaInterface(), RTP_PORT);
+                            RTPsocket.send(senddp);
   
-                    RTPPacket.printheader();
+                            RTPPacket.printheader();
+                        }
+                        else
+                            imagenb--;
+                    }
+                    else
+                        imagenb--;
                 }
-                catch(Exception ex){
-                    System.out.println("Exception caught: "+ex);
+                catch (NumberFormatException nfe){
                     System.exit(0);
+                }
+                catch(Exception e){
+                    e.printStackTrace();
                 }
             }
             else{
