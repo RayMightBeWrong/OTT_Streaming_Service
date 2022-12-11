@@ -87,8 +87,11 @@ public class TCPMessageSender {
         sendMessage(msg);
     }
 
-    public void sendNewLink(NodeLink link, String self, boolean isServer){
-        sendMessage("new link: " + link.getDest());
+    public void sendNewLink(NodeLink link, String self, boolean isServer, boolean fixer){
+        if (fixer)
+            sendMessage("fixer new link: " + link.getDest());
+        else
+            sendMessage("new link: " + link.getDest());
         sendMessage("via node: " + self);
         sendMessage("hops: " + link.getHops());
         sendMessage("cost: " + link.getCost());
@@ -231,6 +234,32 @@ public class TCPMessageSender {
             sb.append(" " + node);
         
         sendMessage(sb.toString());
+    }
+
+    public void fixStream(String[] args){
+        sendMessage("fix stream: " + args[0]);
+        sendMessage("leading to: " + args[1]);
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("going through:");
+        for(int i = 2; i < args.length; i++)
+            sb.append(" " + args[i]);
+
+        sendMessage(sb.toString());
+        end();
+    }
+
+    public void ackFixStream(String[] args){
+        sendMessage("ack fix stream: " + args[0]);
+        sendMessage("leading to: " + args[1]);
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("going through:");
+        for(int i = 2; i < args.length; i++)
+            sb.append(" " + args[i]);
+
+        sendMessage(sb.toString());
+        end();
     }
 
     public void end(){

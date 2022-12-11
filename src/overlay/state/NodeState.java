@@ -175,7 +175,7 @@ public class NodeState {
     }
 
     public boolean isLinkModified(String key, NodeLink newLink){
-        return this.table.isLinkModified(key, newLink);
+        return this.table.isLinkModified(getSelf(), key, newLink);
     }
 
     public StreamLink getMyStream(){
@@ -236,12 +236,112 @@ public class NodeState {
         return res;
     }
 
+    public boolean isNodeInStream(String node){
+        boolean res = false;
+
+        for (StreamLink stream: this.streams){
+            if (stream != null)
+                res = stream.isNodeInStream(node);
+            if (res == true)
+                break;
+        }
+
+        return res;
+    }
+
+    public List<StreamLink> getStreamsWithNode(String node){
+        List<StreamLink> res = new ArrayList<>();
+
+        for (StreamLink stream: this.streams){
+            if (stream != null){
+                if (stream.isNodeInStream(node)){
+                    res.add(stream);
+                }
+            }
+        }
+
+        return res;
+    }
+
+    public boolean isNodeReceivingStream(String node){
+        boolean res = false;
+
+        for (StreamLink stream: this.streams){
+            if (stream != null){
+                if(node.equals(stream.getReceivingNode())){
+                    res = true;
+                    break;
+                }
+            }
+        }
+
+        return res;
+    }
+
+    public StreamLink getStreamFromReceivingNode(String node){
+        StreamLink res = null;
+
+        for (StreamLink stream: this.streams){
+            if (stream != null){
+                if(node.equals(stream.getReceivingNode())){
+                    res = stream;
+                    break;
+                }
+            }
+        }
+
+        return res;
+    }
+
     public List<String> handleClosedNode(String key){
         setAdjState(key, Vertex.OFF);
         if (isServer(key))
             removeServer(key);
 
+        if (isNodeInStream(key)){
+            for(StreamLink stream: this.streams){
+                if (stream != null){
+                    if (stream.isNodeInStream(key)){
+                        stream.setActive(false);
+                        stream.setWithFails(true);
+                        stream.addToFailure(key);
+                    }
+                }
+            }
+        }
+
         return this.table.handleClosedNode(key);
+    }
+
+    public StreamLink fixStream(String streamIDs, String rcvNode, String[] nodesVisited){
+        StreamLink res = null;
+        int streamID = Integer.parseInt(streamIDs);
+
+        for(StreamLink stream: this.streams){
+            if (stream != null){
+                if (stream.getStreamID() == streamID){
+                    stream.setActive(true);
+
+                    List<String> old = stream.getStream();
+                    List<String> newPath = new ArrayList<>();
+
+                    for(String oldNode: old){
+                        newPath.add(oldNode);
+                        if (oldNode.equals(nodesVisited[0]))
+                            break;
+                    }
+
+                    for (int i = 1; i < nodesVisited.length; i++)
+                        newPath.add(nodesVisited[i]);
+                    newPath.add(rcvNode);
+                    
+                    stream.setStream(newPath);
+                    res = stream;
+                }
+            }
+        }
+
+        return res;
     }
 
     public String toString(){

@@ -50,7 +50,10 @@ public class DistancesTable {
         return min;
     }
 
-    public boolean isLinkModified(String key, NodeLink newLink){
+    public boolean isLinkModified(String me, String key, NodeLink newLink){
+        if (me.equals(key))
+            return false;
+
         if (!table.containsKey(key))
             return true;
 

@@ -39,6 +39,9 @@ public class TCPCommunicator extends Thread{
     public static final int CANCEL_STREAM = 21;
     public static final int END_STREAM_CLIENT = 22;
     public static final int END_STREAM = 23;
+    public static final int SEND_NEW_LINK_FIXER = 24;
+    public static final int FIX_STREAM = 25;
+    public static final int ACK_FIX_STREAM = 26;
 
 
     public TCPCommunicator(NodeState state, InetAddress neighbor, int behaviour){
@@ -83,7 +86,7 @@ public class TCPCommunicator extends Thread{
                     NodeLink link = this.state.getLinkTo(dest);
                     boolean isServer = this.state.isServer(dest);
 
-                    sender.sendNewLink(link, this.state.getSelf(), isServer);
+                    sender.sendNewLink(link, this.state.getSelf(), isServer, false);
                     break;
                 
                 case SEND_ROUTES:
@@ -157,6 +160,24 @@ public class TCPCommunicator extends Thread{
                 case END_STREAM:
                     String[] stream4 = (String[]) extraInfo;
                     sender.endStream(stream4); break;
+
+                case SEND_NEW_LINK_FIXER:
+                    String dest2 = (String) extraInfo;
+                    NodeLink link2 = this.state.getLinkTo(dest2);
+                    boolean isServer2 = this.state.isServer(dest2);
+
+                    sender.sendNewLink(link2, this.state.getSelf(), isServer2, true);
+                    break;
+
+                case FIX_STREAM:
+                    String[] args2 = (String[]) extraInfo;
+                    sender.fixStream(args2);
+                    break;
+
+                case ACK_FIX_STREAM:
+                    String[] args3 = (String[]) extraInfo;
+                    sender.ackFixStream(args3);
+                    break;
             }
 
             socket.close();
