@@ -18,7 +18,7 @@ public class VideoSender extends TimerTask{
     private byte[] buf;
     public static int bufLength = 15000;
 
-    public static int FRAME_PERIOD = 100;
+    public static int FRAME_PERIOD = 42;
     private int imagenb = 0;
     private VideoStream video;
     private int VIDEO_LENGTH = 500;
@@ -67,7 +67,6 @@ public class VideoSender extends TimerTask{
                     senddp = new DatagramPacket(packet_bits, packetLength, clientIP, RTP_PORT);
                     RTPsocket.send(senddp);
   
-                    //System.out.println("Send frame #"+imagenb);
                     RTPPacket.printheader();
                 }
                 catch(Exception ex){

@@ -258,11 +258,6 @@ public class TCPHandler {
             }
             else if (isPrefixOf(msg, "servers")){
                 String[] servers = getServers(msg);
-                int i = 0;
-                for(String server: servers){
-                    char[] bytes = server.toCharArray();
-                    i++;
-                }
                 for(String server: servers)
                     this.state.addServer(server);
             }
@@ -313,7 +308,13 @@ public class TCPHandler {
             sendOpenUDPMiddleMan(args, dest);
         }
         else{
-            sendStreamRequest(dest, server);
+            if(this.state.anyActiveStream() == true){
+                int streamNr = getNodeNr(this.state.getSelf()) * 100 + (this.state.getNrStreams() + 1);
+                String[] args = {String.valueOf(streamNr)};
+                sendOpenUDPMiddleMan(args, dest);
+            }
+            else
+                sendStreamRequest(dest, server);
         }
     }
 
@@ -333,6 +334,7 @@ public class TCPHandler {
 
         if (!this.state.getSelf().equals(dest)){
             sendOpenUDPMiddleMan(args, dest);
+            startUDPMiddleMan();
         }
         else{
             String[] newArgs = new String[args.length + 1];
@@ -346,10 +348,10 @@ public class TCPHandler {
 
             StreamLink stream = new StreamLink(streamArgs, Integer.parseInt(newArgs[0]));
             this.state.addStream(stream);
+            startUDPMiddleMan();
             sendACKOpenUDPMiddleMan(newArgs);
         }
 
-        startUDPMiddleMan();
     }
 
     public void readACKOpenUDPMiddleMan(Socket client, BufferedReader in, String msg) throws Exception{
@@ -375,7 +377,11 @@ public class TCPHandler {
         if (this.state.getSelf().equals(args[1])){
             System.out.println("reached servidor");
             String from = this.state.findAdjNodeFromAddress(client.getInetAddress());
-            startVideoSender(stream, from);
+
+            if(this.state.isServer(this.state.getSelf()))
+                startVideoSender(stream, from);
+            else
+                this.middleman.sendTo(stream);
         }
         else{
             sendACKOpenUDPMiddleMan(args);
@@ -400,12 +406,12 @@ public class TCPHandler {
         }
     }
 
-    public void readRequestLink(Socket client, String msg){
+    public void readRequestLink(Socket client, String msg) throws Exception{
         String from = this.state.findAdjNodeFromAddress(client.getInetAddress());
         String to = getSuffixFromPrefix(msg, "? ");
 
         if (this.state.getLinkTo(to) != null){
-            
+            sendNewLinkToAdjacent(from, to);
         }
     }
 

@@ -55,7 +55,7 @@ public class RTPPacket {
         // fill default fields
         byte[] streamIDbytes = {packet[0], packet[1]};
         ByteBuffer buffer = ByteBuffer.wrap(streamIDbytes);
-        buffer.order(ByteOrder.BIG_ENDIAN);  // if you want little-endian
+        buffer.order(ByteOrder.BIG_ENDIAN);
         int result = buffer.getShort();
 
         streamID = result;
@@ -112,6 +112,34 @@ public class RTPPacket {
 
     public int getsequencenumber() {
         return sequenceNr;
+    }
+
+
+    public byte[] getContent(){
+        byte[] res = new byte[header.length + payload.length];
+        int i = 0;
+
+        for(byte b: header){
+            res[i] = b;
+            i++;
+        }
+        for(byte b: payload){
+            res[i] = b;
+            i++;
+        }
+
+        return res;
+    }
+
+    public void changeStreamID(int streamID){
+        this.streamID = streamID;
+
+        ByteBuffer b = ByteBuffer.allocate(4);
+        b.putInt(streamID);
+        byte[] result = b.array();
+
+        header[0] = result[2];
+        header[1] = result[3];
     }
 
     public void printheader(){

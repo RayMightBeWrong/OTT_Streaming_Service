@@ -81,8 +81,10 @@ public class OTTStreaming {
     }
 
     public static void main(String[] args){
-        //if (args.length == 1)
-        //    new OTTStreaming(args[0]);
+        
+        if (args.length == 1)
+            new OTTStreaming(args[0]);
+        /*/*
         try{
             InetAddress ip = InetAddress.getByName(args[0]);
             TCPCommunicator client;
@@ -94,6 +96,7 @@ public class OTTStreaming {
         catch(Exception e){
             e.printStackTrace();
         }
+        */
     }
 
     public static void tmpMethod() throws Exception{
