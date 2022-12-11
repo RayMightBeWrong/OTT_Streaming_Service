@@ -18,7 +18,7 @@ public class VideoSender extends TimerTask{
     private byte[] buf;
     public static int bufLength = 15000;
 
-    public static int FRAME_PERIOD = 70;
+    public static int FRAME_PERIOD = 100;
     private int imagenb = 0;
     private VideoStream video;
     private int VIDEO_LENGTH = 500;

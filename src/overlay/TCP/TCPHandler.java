@@ -24,8 +24,7 @@ public class TCPHandler {
     private NodeState state;
     private int nodeType;
     private Map<String, UDPServer> senders;
-    private Map<String, UDPMiddleMan> middleman;
-    private Map<String, UDPMiddleMan> client;
+    private UDPMiddleMan middleman;
 
     public static final int PORT = 6667;
 
@@ -33,6 +32,7 @@ public class TCPHandler {
     public static final int SERVER_NODE = 2;
 
     public TCPHandler(NodeState state, int nodeType){
+        this.middleman = null;
         this.state = state;
         this.nodeType = nodeType;
         if (nodeType == NORMAL_NODE)
@@ -333,8 +333,6 @@ public class TCPHandler {
 
         if (!this.state.getSelf().equals(dest)){
             sendOpenUDPMiddleMan(args, dest);
-            if(this.state.anyActiveStream() == false)
-                startUDPMiddleMan();
         }
         else{
             String[] newArgs = new String[args.length + 1];
@@ -349,10 +347,9 @@ public class TCPHandler {
             StreamLink stream = new StreamLink(streamArgs, Integer.parseInt(newArgs[0]));
             this.state.addStream(stream);
             sendACKOpenUDPMiddleMan(newArgs);
-            System.out.println("sup");
-            startUDPMiddleMan();
-            System.out.println("sup2");
         }
+
+        startUDPMiddleMan();
     }
 
     public void readACKOpenUDPMiddleMan(Socket client, BufferedReader in, String msg) throws Exception{
@@ -509,8 +506,11 @@ public class TCPHandler {
     }
 
     public void startUDPMiddleMan(){
-        Thread middleman = new Thread(new UDPMiddleMan(this.state));
-        middleman.start();
+        if (this.middleman == null){
+            UDPMiddleMan middleman = new UDPMiddleMan(this.state);
+            this.middleman = middleman;
+            middleman.start();
+        }
     }
 
     public void startMonitoring(){
@@ -541,8 +541,9 @@ public class TCPHandler {
         client.run();
     }
 
-    public void sendCancelStream(){
+    public void sendCancelStream() throws Exception{
         StreamLink myStream = this.state.getMyStream();
+
         if(myStream != null){
             String[] args = myStream.convertLinkToArgs();
             String nextNode = myStream.findNextNode(this.state.getSelf(), true);
@@ -554,7 +555,7 @@ public class TCPHandler {
         }
     }
 
-    public void sendEndStream(String msg){
+    public void sendEndStream(String msg) throws Exception{
         String[] args = getNodesVisited(msg, "end stream client: ");
         StreamLink stream = this.state.getStreamFromArgs(args);
         String nextNode = stream.findNextNode(this.state.getSelf(), false);
