@@ -123,10 +123,10 @@ public class TCPHandler {
                 readNewLink(client, in, msg, true); break;
             }
             else if (isFixStream(msg)){
-                readFixStream(false, client, in, msg); break;
+                readFixStream(false, in, msg); break;
             }
             else if (isAckFixStream(msg)){
-                readFixStream(true, client, in, msg); break;
+                readFixStream(true, in, msg); break;
             }
         }
 
@@ -328,7 +328,7 @@ public class TCPHandler {
             sendOpenUDPMiddleMan(args, dest);
         }
         else{
-            if(this.state.anyActiveStream() == true){
+            if(this.state.anyActiveStreamWithoutDefects() == true){
                 int streamNr = getNodeNr(this.state.getSelf()) * 100 + (this.state.getNrStreams() + 1);
                 String[] args = {String.valueOf(streamNr)};
                 sendOpenUDPMiddleMan(args, dest);
@@ -496,13 +496,7 @@ public class TCPHandler {
         this.state.removeStream(stream);
     }
 
-    public void readFixStream(boolean ack, Socket client, BufferedReader in, String msg) throws Exception{
-        if(ack)
-            System.out.println("ACK FIX STREAM FROM: " + client.getInetAddress());
-        else
-            System.out.println("FIX STREAM FROM: " + client.getInetAddress());
-
-
+    public void readFixStream(boolean ack, BufferedReader in, String msg) throws Exception{
         String streamID;
         if (ack)
             streamID = getSuffixFromPrefix(msg, "ack fix stream: ");
@@ -513,7 +507,6 @@ public class TCPHandler {
 
         while(true){
             msg = in.readLine();
-            System.out.println(msg);
 
             if(isPrefixOf(msg, "leading to"))
                 rcv = getSuffixFromPrefix(msg, "leading to: ");

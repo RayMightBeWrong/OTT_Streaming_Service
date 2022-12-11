@@ -236,6 +236,19 @@ public class NodeState {
         return res;
     }
 
+    public boolean anyActiveStreamWithoutDefects(){
+        boolean res = false;
+
+        for (StreamLink stream: this.streams){
+            if (stream != null && stream.getActive() == true){
+                res = true;
+                break;
+            }
+        }
+
+        return res;
+    }
+
     public boolean isNodeInStream(String node){
         boolean res = false;
 
@@ -317,12 +330,8 @@ public class NodeState {
         StreamLink res = null;
         int streamID = Integer.parseInt(streamIDs);
 
-        for (String s: nodesVisited)
-            System.out.println("NODE VISITED: " + s);
-
         for(StreamLink stream: this.streams){
             if (stream != null){
-                System.out.println("STREAM ID: " + streamID);
                 if (stream.getStreamID() == streamID){
                     stream.setActive(true);
 
@@ -331,9 +340,6 @@ public class NodeState {
                         newPath.add(nodesVisited[i]);
                     newPath.add(rcvNode);
 
-                    for(String s: newPath)
-                        System.out.println("NEW PATH: " + s);
-                    
                     stream.setStream(newPath);
                     res = stream;
                 }
