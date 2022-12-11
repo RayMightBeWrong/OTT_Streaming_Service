@@ -16,7 +16,6 @@ import overlay.state.NodeLink;
 import overlay.state.NodeState;
 import overlay.state.StreamLink;
 import overlay.state.Vertex;
-import streaming.UDP.UDPClient;
 import streaming.UDP.UDPMiddleMan;
 import streaming.UDP.UDPServer;
 
@@ -25,7 +24,8 @@ public class TCPHandler {
     private NodeState state;
     private int nodeType;
     private Map<String, UDPServer> senders;
-    //private Map<String, UDPMiddleMan> middleman;
+    private Map<String, UDPMiddleMan> middleman;
+    private Map<String, UDPMiddleMan> client;
 
     public static final int PORT = 6667;
 
@@ -257,14 +257,10 @@ public class TCPHandler {
                 }
             }
             else if (isPrefixOf(msg, "servers")){
-                System.out.println("servers msg: " + msg);
                 String[] servers = getServers(msg);
                 int i = 0;
                 for(String server: servers){
-                    System.out.println(i + ": " + server);
                     char[] bytes = server.toCharArray();
-                    for(int j = 0; j < bytes.length; j++)
-                        System.out.println(j + "|" + bytes[j]);
                     i++;
                 }
                 for(String server: servers)
@@ -338,7 +334,7 @@ public class TCPHandler {
         if (!this.state.getSelf().equals(dest)){
             sendOpenUDPMiddleMan(args, dest);
             if(this.state.anyActiveStream() == false)
-                startUDPMiddleMan(dest);
+                startUDPMiddleMan();
         }
         else{
             String[] newArgs = new String[args.length + 1];
@@ -353,7 +349,9 @@ public class TCPHandler {
             StreamLink stream = new StreamLink(streamArgs, Integer.parseInt(newArgs[0]));
             this.state.addStream(stream);
             sendACKOpenUDPMiddleMan(newArgs);
-            startUDPMiddleMan(dest);
+            System.out.println("sup");
+            startUDPMiddleMan();
+            System.out.println("sup2");
         }
     }
 
@@ -510,27 +508,9 @@ public class TCPHandler {
         this.senders.put(stream.getReceivingNode(), UDPServer);
     }
 
-    public void startUDPClient(){
-        List<InetAddress> ips = this.state.getSelfIPs();
-
-        Thread UDPClient = new Thread(new UDPClient(ips.get(0)));
-        UDPClient.start();
-    }
-
-    public void startUDPMiddleMan(String dest){
-        if (!this.state.getSelf().equals(dest)){
-            NodeLink link = this.state.getLinkTo(dest);
-            System.out.println("dest: " + dest);
-            System.out.println("interface: " + link.getViaInterface());
-            Thread middleman = new Thread(new UDPMiddleMan(this.state));
-            middleman.start();
-        }
-        else{
-            List<InetAddress> ips = this.state.getSelfIPs();
-
-            Thread UDPClient = new Thread(new UDPClient(ips.get(0)));
-            UDPClient.start();
-        }
+    public void startUDPMiddleMan(){
+        Thread middleman = new Thread(new UDPMiddleMan(this.state));
+        middleman.start();
     }
 
     public void startMonitoring(){

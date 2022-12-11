@@ -44,15 +44,22 @@ public class StreamLink {
 
         for(int i = 0; i < this.nodes.size(); i++){
             if (me.equals(this.nodes.get(i))){
-                if (order)
-                    nextNode = this.nodes.get(i - 1);
-                else
-                    nextNode = this.nodes.get(i + 1);
+                if (order){
+                    if (i - 1 >= 0)
+                        nextNode = this.nodes.get(i - 1);
+                }
+                else{
+                    if (i + 1 < this.nodes.size())
+                        nextNode = this.nodes.get(i + 1);
+                }
                 break;
             }
         }
 
-        return nextNode;
+        if (nextNode.equals(""))
+            return me;
+        else
+            return nextNode;
     }
 
     public String toString(){

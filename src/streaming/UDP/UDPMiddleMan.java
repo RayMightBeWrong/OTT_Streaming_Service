@@ -2,11 +2,14 @@ package streaming.UDP;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.SocketException;
+import java.util.List;
 
 import overlay.state.NodeLink;
 import overlay.state.NodeState;
 import overlay.state.StreamLink;
+import streaming.OTTStreaming;
 
 public class UDPMiddleMan extends Thread{
     NodeState state;
@@ -47,10 +50,17 @@ public class UDPMiddleMan extends Thread{
                 int streamID = rtp_packet.getStreamID();
                 StreamLink stream = this.state.getStreamFromID(streamID);
                 String nextNode = stream.findNextNode(this.state.getSelf(), false);
-                NodeLink link = this.state.getLinkTo(nextNode);
 
-                senddp = new DatagramPacket(buf, buf.length, link.getViaInterface(), UDPServer.PORT);
-                sender.send(senddp);
+                if (nextNode.equals(this.state.getSelf())){
+                    List<InetAddress> ips = this.state.getSelfIPs();
+                    senddp = new DatagramPacket(buf, buf.length, ips.get(0), OTTStreaming.RTP_PORT);
+                    sender.send(senddp);
+                }
+                else{
+                    NodeLink link = this.state.getLinkTo(nextNode);
+                    senddp = new DatagramPacket(buf, buf.length, link.getViaInterface(), UDPServer.PORT);
+                    sender.send(senddp);
+                }                
             }
         }
         catch (Exception e){
