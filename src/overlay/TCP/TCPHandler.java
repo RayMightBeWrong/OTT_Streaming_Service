@@ -123,10 +123,10 @@ public class TCPHandler {
                 readNewLink(client, in, msg, true); break;
             }
             else if (isFixStream(msg)){
-                readFixStream(false, in, msg); break;
+                readFixStream(false, client, in, msg); break;
             }
             else if (isAckFixStream(msg)){
-                readFixStream(true, in, msg); break;
+                readFixStream(true, client, in, msg); break;
             }
         }
 
@@ -223,11 +223,10 @@ public class TCPHandler {
                         this.state.addServer(name);
                     sendNewLinkToAdjacents(name, viaNode);
 
-                    if (fixer){
-                        if (this.state.isNodeReceivingStream(name)){
-                            StreamLink stream = this.state.getStreamFromReceivingNode(name);
+                    if (this.state.isNodeReceivingStream(name)){
+                        StreamLink stream = this.state.getStreamFromReceivingNode(name);
+                        if ((fixer || stream.getActive() == false) && this.state.getSelf().equals(stream.getServer()))
                             sendFixStream(viaNode, String.valueOf(stream.getStreamID()), stream.getReceivingNode(), new String[0]);
-                        }
                     }
 
                     System.out.println("\n__________________________________________________\n\nESTADO");
@@ -497,7 +496,13 @@ public class TCPHandler {
         this.state.removeStream(stream);
     }
 
-    public void readFixStream(boolean ack, BufferedReader in, String msg) throws Exception{
+    public void readFixStream(boolean ack, Socket client, BufferedReader in, String msg) throws Exception{
+        if(ack)
+            System.out.println("ACK FIX STREAM FROM: " + client.getInetAddress());
+        else
+            System.out.println("FIX STREAM FROM: " + client.getInetAddress());
+
+
         String streamID;
         if (ack)
             streamID = getSuffixFromPrefix(msg, "ack fix stream: ");
@@ -520,28 +525,35 @@ public class TCPHandler {
             }
         }
 
-        if (ack){
-            StreamLink stream = this.state.fixStream(streamID, rcv, nodesVisited);
+        StreamLink oldStream = this.state.getStreamFromID(Integer.parseInt(streamID));
+        if (oldStream == null || oldStream.getActive() == false){
+            if (ack){
+                StreamLink stream = this.state.fixStream(streamID, rcv, nodesVisited);
             
-            if(stream != null){
-                if(this.state.getSelf().equals(stream.getServer()) == false){
+                if(stream != null){
+                    if(this.state.getSelf().equals(stream.getServer()) == false){
+                        sendAckFixStream(streamID, stream);
+                    }
+                }
+                else{
+                    stream = new StreamLink(nodesVisited, rcv, Integer.parseInt(streamID), true, nodesVisited[0]);
+                    this.state.addStream(stream);
+                    System.out.println("STREAM ID: " + stream.getStreamID());
+                    List<String> nodes = stream.getStream();
+                    for(String s: nodes)
+                        System.out.println("NODE: " + s);
                     sendAckFixStream(streamID, stream);
                 }
             }
             else{
-                stream = new StreamLink(nodesVisited, rcv, Integer.parseInt(streamID), true, nodesVisited[0]);
-                this.state.addStream(stream);
-                sendAckFixStream(streamID, stream);
-            }
-        }
-        else{
-            if(this.state.getSelf().equals(rcv) == false){
-                startUDPMiddleMan();
-                sendFixStream(rcv, streamID, rcv, nodesVisited);
-            }
-            else{
-                StreamLink stream = this.state.fixStream(streamID, rcv, nodesVisited);
-                sendAckFixStream(streamID, stream);
+                if(this.state.getSelf().equals(rcv) == false){
+                    startUDPMiddleMan();
+                    sendFixStream(rcv, streamID, rcv, nodesVisited);
+                }
+                else{
+                    StreamLink stream = this.state.fixStream(streamID, rcv, nodesVisited);
+                    sendAckFixStream(streamID, stream);
+                }
             }
         }
     }
@@ -668,7 +680,6 @@ public class TCPHandler {
         Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.ACK_FIX_STREAM, args));
         client.run();
     }
-
 
     public void sendProbe(String key, boolean initial) throws InterruptedException{
         List<InetAddress> ips = this.state.findAddressesFromAdjNode(key);
@@ -923,6 +934,14 @@ public class TCPHandler {
 
     public boolean isAckFixStream(String msg){
         return isPrefixOf(msg, "ack fix stream");
+    }
+
+    public boolean isChangeStream(String msg){
+        return isPrefixOf(msg, "change stream");
+    }
+
+    public boolean isAckChangeStream(String msg){
+        return isPrefixOf(msg, "ack change stream");
     }
 
     public boolean isEnd(String msg){

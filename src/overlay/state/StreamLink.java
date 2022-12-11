@@ -7,14 +7,14 @@ public class StreamLink {
     private List<String> nodes;
     private int id;
     private boolean active;
-    private boolean withFails;
-    private String failureAt;
+    private boolean withChange;
+    private String changeAt;
 
-    public StreamLink(String[] path, String rcv, int id, boolean withFails, String failureAt){
+    public StreamLink(String[] path, String rcv, int id, boolean withChange, String changeAt){
         this.id = id;
         this.active = true;
-        this.withFails = withFails;
-        this.failureAt = failureAt;
+        this.withChange = withChange;
+        this.changeAt = changeAt;
         this.nodes = new ArrayList<>();
         for(String node: path)
             this.nodes.add(node);
@@ -25,8 +25,8 @@ public class StreamLink {
         this.id = id;
         this.nodes = new ArrayList<>();
         this.active = true;
-        this.withFails = false;
-        this.failureAt = "";
+        this.withChange = false;
+        this.changeAt = "";
         for(String s: args)
             this.nodes.add(s);
     }
@@ -43,8 +43,12 @@ public class StreamLink {
         return this.active;
     }
     
-    public boolean getWithFails(){
-        return this.withFails;
+    public boolean getWithChange(){
+        return this.withChange;
+    }
+
+    public String getChangeAt(){
+        return this.changeAt;
     }
 
     public void setStream(List<String> stream){
@@ -55,12 +59,12 @@ public class StreamLink {
         this.active = active;
     }
 
-    public void setWithFails(boolean withFails){
-        this.withFails = withFails;
+    public void setWithChange(boolean withChange){
+        this.withChange = withChange;
     }
 
-    public void addToFailure(String node){
-        this.failureAt = node;
+    public void addToChange(String node){
+        this.changeAt = node;
     }
 
     public String getServer(){
@@ -130,12 +134,12 @@ public class StreamLink {
         else
             sb.append("\t\tACTIVE: FALSE\n");
 
-        if (withFails){
-            sb.append("\t\tFAILURES OCURRED: TRUE\n");
-            sb.append("\t\tFAILURE AT: " + this.failureAt + "\n");
+        if (withChange){
+            sb.append("\t\tCHANGES OCURRED: TRUE\n");
+            sb.append("\t\tCHANGE AT: " + this.changeAt + "\n");
         }
         else
-            sb.append("\t\tFAILURES OCURRED: FALSE\n");
+            sb.append("\t\tCHANGE OCURRED: FALSE\n");
 
         return sb.toString();
     }

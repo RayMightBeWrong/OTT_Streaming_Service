@@ -303,8 +303,8 @@ public class NodeState {
                 if (stream != null){
                     if (stream.isNodeInStream(key)){
                         stream.setActive(false);
-                        stream.setWithFails(true);
-                        stream.addToFailure(key);
+                        stream.setWithChange(true);
+                        stream.addToChange(key);
                     }
                 }
             }
@@ -317,23 +317,22 @@ public class NodeState {
         StreamLink res = null;
         int streamID = Integer.parseInt(streamIDs);
 
+        for (String s: nodesVisited)
+            System.out.println("NODE VISITED: " + s);
+
         for(StreamLink stream: this.streams){
             if (stream != null){
+                System.out.println("STREAM ID: " + streamID);
                 if (stream.getStreamID() == streamID){
                     stream.setActive(true);
 
-                    List<String> old = stream.getStream();
                     List<String> newPath = new ArrayList<>();
-
-                    for(String oldNode: old){
-                        newPath.add(oldNode);
-                        if (oldNode.equals(nodesVisited[0]))
-                            break;
-                    }
-
-                    for (int i = 1; i < nodesVisited.length; i++)
+                    for (int i = 0; i < nodesVisited.length; i++)
                         newPath.add(nodesVisited[i]);
                     newPath.add(rcvNode);
+
+                    for(String s: newPath)
+                        System.out.println("NEW PATH: " + s);
                     
                     stream.setStream(newPath);
                     res = stream;
