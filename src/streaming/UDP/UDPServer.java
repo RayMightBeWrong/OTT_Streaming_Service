@@ -12,9 +12,9 @@ public class UDPServer extends Thread{
     private boolean running;
     private VideoSender sender;
 
-    public UDPServer(InetAddress ownIP, StreamLink stream, NodeState state){
+    public UDPServer(InetAddress ownIP, StreamLink stream, NodeState state, VideoStream video){
         this.running = true;
-        this.sender = new VideoSender(ownIP, "movie.Mjpeg", stream, state);
+        this.sender = new VideoSender(ownIP, video, stream, state);
     }
     
     public void run(){

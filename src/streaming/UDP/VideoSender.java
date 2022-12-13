@@ -28,7 +28,7 @@ public class VideoSender extends TimerTask{
     private NodeState state;
     
 
-    public VideoSender(InetAddress ownIP, String videoFileName, StreamLink stream, NodeState state){
+    public VideoSender(InetAddress ownIP, VideoStream videoStream, StreamLink stream, NodeState state){
         this.buf = new byte[bufLength];
         this.running = true;
         
@@ -36,11 +36,12 @@ public class VideoSender extends TimerTask{
             this.RTPsocket = new DatagramSocket();
             this.ownIP = ownIP;
             this.stream = stream;
-            this.video = new VideoStream(videoFileName);
+            this.video = videoStream;
             this.state = state;
         } catch (SocketException e) {
             System.out.println("Servidor: erro no socket: " + e.getMessage());
         } catch (Exception e) {
+            e.printStackTrace();
             System.out.println("Servidor: erro no video: " + e.getMessage());
         }
     }
@@ -59,7 +60,9 @@ public class VideoSender extends TimerTask{
                 imagenb++;
 
                 try {
-                    int imageLength = video.getNextFrame(buf);
+                    int imageLength = video.getImageLength(imagenb);
+                    buf = video.getFrame(imagenb);
+            
                     RTPPacket RTPPacket = new RTPPacket(this.stream.getStreamID(), imagenb, imagenb * FRAME_PERIOD, buf, imageLength);
                     int packetLength = RTPPacket.getlength();
   
@@ -83,9 +86,6 @@ public class VideoSender extends TimerTask{
                     }
                     else
                         imagenb--;
-                }
-                catch (NumberFormatException nfe){
-                    System.exit(0);
                 }
                 catch(Exception e){
                     e.printStackTrace();

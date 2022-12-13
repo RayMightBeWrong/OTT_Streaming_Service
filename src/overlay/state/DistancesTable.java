@@ -17,6 +17,10 @@ public class DistancesTable {
         return this.table;
     }
 
+    public void removeLink(String dest){
+        this.table.remove(dest);
+    }
+
     public void addLink(String dest, NodeLink newLink){
         this.table.put(dest, newLink);
     }

@@ -87,9 +87,11 @@ public class TCPMessageSender {
         sendMessage(msg);
     }
 
-    public void sendNewLink(NodeLink link, String self, boolean isServer, boolean fixer){
-        if (fixer)
+    public void sendNewLink(String dest, NodeLink link, String self, boolean isServer, boolean fixer){
+        if (fixer){
             sendMessage("fixer new link: " + link.getDest());
+            sendMessage("give to: " + link.getDest());
+        }
         else
             sendMessage("new link: " + link.getDest());
         sendMessage("via node: " + self);
@@ -239,10 +241,11 @@ public class TCPMessageSender {
     public void fixStream(String[] args){
         sendMessage("fix stream: " + args[0]);
         sendMessage("leading to: " + args[1]);
+        sendMessage("ordered by: " + args[2]);
 
         StringBuilder sb = new StringBuilder();
         sb.append("going through:");
-        for(int i = 2; i < args.length; i++)
+        for(int i = 3; i < args.length; i++)
             sb.append(" " + args[i]);
 
         sendMessage(sb.toString());
@@ -252,10 +255,39 @@ public class TCPMessageSender {
     public void ackFixStream(String[] args){
         sendMessage("ack fix stream: " + args[0]);
         sendMessage("leading to: " + args[1]);
+        sendMessage("ordered by: " + args[2]);
 
         StringBuilder sb = new StringBuilder();
         sb.append("going through:");
-        for(int i = 2; i < args.length; i++)
+        for(int i = 3; i < args.length; i++)
+            sb.append(" " + args[i]);
+
+        sendMessage(sb.toString());
+        end();
+    }
+
+    public void changeStream(String[] args){
+        sendMessage("change stream: " + args[0]);
+        sendMessage("leading to: " + args[1]);
+        sendMessage("ordered by: " + args[2]);
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("going through:");
+        for(int i = 3; i < args.length; i++)
+            sb.append(" " + args[i]);
+
+        sendMessage(sb.toString());
+        end();
+    }
+
+    public void ackChangeStream(String[] args){
+        sendMessage("ack change stream: " + args[0]);
+        sendMessage("leading to: " + args[1]);
+        sendMessage("ordered by: " + args[2]);
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("going through:");
+        for(int i = 3; i < args.length; i++)
             sb.append(" " + args[i]);
 
         sendMessage(sb.toString());

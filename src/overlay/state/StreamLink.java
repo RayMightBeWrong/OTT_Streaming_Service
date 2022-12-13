@@ -9,8 +9,9 @@ public class StreamLink {
     private boolean active;
     private boolean withChange;
     private String changeAt;
+    private boolean changeAfterMe;
 
-    public StreamLink(String[] path, String rcv, int id, boolean withChange, String changeAt){
+    public StreamLink(String[] path, String rcv, int id, boolean withChange, String changeAt, String me){
         this.id = id;
         this.active = true;
         this.withChange = withChange;
@@ -19,6 +20,7 @@ public class StreamLink {
         for(String node: path)
             this.nodes.add(node);
         this.nodes.add(rcv);
+        setChangeAfterMe(me);
     }
 
     public StreamLink(String[] args, int id){
@@ -26,6 +28,7 @@ public class StreamLink {
         this.nodes = new ArrayList<>();
         this.active = true;
         this.withChange = false;
+        this.changeAfterMe = true;
         this.changeAt = "";
         for(String s: args)
             this.nodes.add(s);
@@ -51,6 +54,10 @@ public class StreamLink {
         return this.changeAt;
     }
 
+    public boolean getChangeAfterMe(){
+        return this.changeAfterMe;
+    }
+
     public void setStream(List<String> stream){
         this.nodes = stream;
     }
@@ -63,8 +70,25 @@ public class StreamLink {
         this.withChange = withChange;
     }
 
-    public void addToChange(String node){
+    public void setChangeAt(String node){
         this.changeAt = node;
+    }
+
+    public void setChangeAfterMe(String me){
+        if(this.changeAfterMe == true){
+            System.out.println("ME: " + me);
+            for(String node: this.nodes){
+                System.out.println("node: " + node);
+                if (me.equals(node)){
+                    this.changeAfterMe = true;
+                    break;
+                }
+                else if(node.equals(this.changeAt)){
+                    this.changeAfterMe = false;
+                    break;
+                }
+            }
+        }
     }
 
     public String getServer(){
@@ -137,6 +161,10 @@ public class StreamLink {
         if (withChange){
             sb.append("\t\tCHANGES OCURRED: TRUE\n");
             sb.append("\t\tCHANGE AT: " + this.changeAt + "\n");
+            if (changeAfterMe)
+                sb.append("\t\tCHANGE AFTER ME\n");
+            else
+                sb.append("\t\tCHANGE BEFORE ME\n");
         }
         else
             sb.append("\t\tCHANGE OCURRED: FALSE\n");

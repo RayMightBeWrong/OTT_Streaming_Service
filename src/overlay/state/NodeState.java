@@ -317,7 +317,7 @@ public class NodeState {
                     if (stream.isNodeInStream(key)){
                         stream.setActive(false);
                         stream.setWithChange(true);
-                        stream.addToChange(key);
+                        stream.setChangeAt(key);
                     }
                 }
             }
@@ -326,7 +326,53 @@ public class NodeState {
         return this.table.handleClosedNode(key);
     }
 
-    public StreamLink fixStream(String streamIDs, String rcvNode, String[] nodesVisited){
+    public boolean removeDependentLink(String viaNode, String to){
+        NodeLink link = this.table.getLinkTo(to);
+        if (link == null)
+            return false;
+        else if (link.getViaNode().equals(viaNode)){
+            this.table.removeLink(to);
+            return true;
+        }
+        else
+            return false;
+    }
+
+    public StreamLink fixStream(String streamIDs, String rcvNode, String[] nodesVisited, String orderedBy){
+        StreamLink res = null;
+        int streamID = Integer.parseInt(streamIDs);
+
+        for(StreamLink stream: this.streams){
+            if (stream != null){
+                if (stream.getStreamID() == streamID){
+                    List<String> newPath = new ArrayList<>();
+                    stream.setActive(true);
+
+                    StreamLink oldStream = getStreamFromID(streamID);
+                    for(String node: oldStream.getStream()){
+                        if (node.equals(orderedBy))
+                            break;
+                        newPath.add(node);
+                    }
+
+                    for (int i = 0; i < nodesVisited.length; i++){
+                        if (newPath.contains(nodesVisited[i]) == false)
+                            newPath.add(nodesVisited[i]);
+                    }
+                    newPath.add(rcvNode);
+
+                    stream.setStream(newPath);
+                    stream.setChangeAt(orderedBy);
+                    stream.setChangeAfterMe(getSelf());
+                    res = stream;
+                }
+            }
+        }
+
+        return res;
+    }
+
+    public StreamLink changeStream(String streamIDs, String rcvNode, String[] nodesVisited, String orderedBy){
         StreamLink res = null;
         int streamID = Integer.parseInt(streamIDs);
 
@@ -340,7 +386,10 @@ public class NodeState {
                         newPath.add(nodesVisited[i]);
                     newPath.add(rcvNode);
 
+                    stream.setWithChange(true);
+                    stream.setChangeAt(orderedBy);
                     stream.setStream(newPath);
+                    stream.setChangeAfterMe(getSelf());
                     res = stream;
                 }
             }
