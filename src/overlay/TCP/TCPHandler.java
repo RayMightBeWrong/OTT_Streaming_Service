@@ -237,9 +237,13 @@ public class TCPHandler {
                     if(oldLink != null){
                         if ((this.state.isNodeReceivingStream(name))){
                             StreamLink stream = this.state.getStreamFromReceivingNode(name);
-                            if ((fixer || stream.getActive() == false) && this.state.getSelf().equals(stream.getReceivingNode()) == false) //)
+                            if ((fixer || stream.getActive() == false) 
+                                    && this.state.getSelf().equals(stream.getReceivingNode()) == false
+                                    && viaNode.equals(stream.getServer()) == false)
                                 sendFixStream(viaNode, String.valueOf(stream.getStreamID()), stream.getReceivingNode(), this.state.getSelf(), new String[0]);
-                            else if (this.state.getSelf().equals(stream.getServer()) && oldLink.getViaNode().equals(viaNode) == false)
+                            else if (this.state.getSelf().equals(stream.getReceivingNode()) == false 
+                                        && oldLink.getViaNode().equals(viaNode) == false
+                                        && viaNode.equals(stream.getServer()) == false)
                                 sendChangeStream(viaNode, String.valueOf(stream.getStreamID()), stream.getReceivingNode(), this.state.getSelf(), new String[0]);
                         }
                     }
@@ -885,8 +889,11 @@ public class TCPHandler {
         args[i + 3] = this.state.getSelf();
 
         NodeLink link = this.state.getLinkTo(dest);
-        Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.FIX_STREAM, args));
-        client.start();
+        StreamLink stream = this.state.getStreamFromID(Integer.parseInt(streamID));
+        if (stream == null || link.getViaNode().equals(stream.getServer()) == false){
+            Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.FIX_STREAM, args));
+            client.start();
+        }
     }
 
     public void sendAckFixStream(String streamID, StreamLink stream, String orderedBy) throws Exception{
@@ -916,8 +923,11 @@ public class TCPHandler {
         args[i + 3] = this.state.getSelf();
 
         NodeLink link = this.state.getLinkTo(dest);
-        Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.CHANGE_STREAM, args));
-        client.start();
+        StreamLink stream = this.state.getStreamFromID(Integer.parseInt(streamID));
+        if (stream == null || link.getViaNode().equals(stream.getServer()) == false){
+            Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.CHANGE_STREAM, args));
+            client.start();
+        }
     }
 
 

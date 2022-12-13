@@ -76,9 +76,7 @@ public class StreamLink {
 
     public void setChangeAfterMe(String me){
         if(this.changeAfterMe == true){
-            System.out.println("ME: " + me);
             for(String node: this.nodes){
-                System.out.println("node: " + node);
                 if (me.equals(node)){
                     this.changeAfterMe = true;
                     break;

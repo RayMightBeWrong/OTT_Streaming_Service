@@ -379,12 +379,22 @@ public class NodeState {
         for(StreamLink stream: this.streams){
             if (stream != null){
                 if (stream.getStreamID() == streamID){
+                    List<String> newPath = new ArrayList<>();
                     stream.setActive(true);
 
-                    List<String> newPath = new ArrayList<>();
-                    for (int i = 0; i < nodesVisited.length; i++)
-                        newPath.add(nodesVisited[i]);
+                    StreamLink oldStream = getStreamFromID(streamID);
+                    for(String node: oldStream.getStream()){
+                        if (node.equals(orderedBy))
+                            break;
+                        newPath.add(node);
+                    }
+                    
+                    for (int i = 0; i < nodesVisited.length; i++){
+                        if (newPath.contains(nodesVisited[i]) == false)
+                            newPath.add(nodesVisited[i]);
+                    }
                     newPath.add(rcvNode);
+
 
                     stream.setWithChange(true);
                     stream.setChangeAt(orderedBy);
