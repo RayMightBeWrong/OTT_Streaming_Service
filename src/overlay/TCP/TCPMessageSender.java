@@ -77,17 +77,24 @@ public class TCPMessageSender {
         end();
     }
 
-    public void probe(boolean initial){
-        String msg;
-        if(initial)
-            msg = "probe: initial: " + LocalDateTime.now();
+    public void probe(boolean initial, NodeState state){
+        if(initial){
+            sendMessage("probe: initial: " + LocalDateTime.now());
+        }
         else
-            msg = "probe: regular: " + LocalDateTime.now();
-        
-        sendMessage(msg);
+            sendMessage("probe: regular: " + LocalDateTime.now());
+
+        List<String> servers = state.getServers();
+        StringBuilder sb = new StringBuilder();
+        sb.append("servers:");
+        for(String server: servers){
+            sb.append(" " + server);
+        }
+        sendMessage(sb.toString());
+        end();
     }
 
-    public void sendNewLink(String dest, NodeLink link, String self, boolean isServer, boolean fixer){
+    public void sendNewLink(String dest, NodeLink link, String self, boolean fixer){
         if (fixer){
             sendMessage("fixer new link: " + link.getDest());
             sendMessage("give to: " + link.getDest());
@@ -97,8 +104,6 @@ public class TCPMessageSender {
         sendMessage("via node: " + self);
         sendMessage("hops: " + link.getHops());
         sendMessage("cost: " + link.getCost());
-        if (isServer)
-            sendMessage("is server");
         end();
     }
 
@@ -116,19 +121,13 @@ public class TCPMessageSender {
                 sendMessage("route done");
             }
         }
-
-        StringBuilder sb = new StringBuilder();
-        sb.append("servers:");
-        for(String server: state.getServers())
-            sb.append(" " + server);
     
-        sendMessage(sb.toString());
         end();
     }
 
     public void sendInitialMonitoringMessage(NodeState state){
         sendMessage("monitoring: " + state.getSelf());
-        probe(false);
+        probe(false, state);
         end();
     }
 
@@ -140,7 +139,7 @@ public class TCPMessageSender {
         msg.append(" " + state.getSelf());
 
         sendMessage(msg.toString());
-        probe(false);
+        probe(false, state);
         end();
     }
 

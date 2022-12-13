@@ -78,17 +78,16 @@ public class TCPCommunicator extends Thread{
                     break;
 
                 case PROBE_INITIAL:
-                    sender.probe(true); break;
+                    sender.probe(true, this.state); break;
 
                 case PROBE_REGULAR:
-                    sender.probe(false); break;
+                    sender.probe(false, this.state); break;
 
                 case SEND_NEW_LINK:
                     String dest = (String) extraInfo;
                     NodeLink link = this.state.getLinkTo(dest);
-                    boolean isServer = this.state.isServer(dest);
 
-                    sender.sendNewLink(null, link, this.state.getSelf(), isServer, false);
+                    sender.sendNewLink(null, link, this.state.getSelf(), false);
                     break;
                 
                 case SEND_ROUTES:
@@ -166,9 +165,8 @@ public class TCPCommunicator extends Thread{
                 case SEND_NEW_LINK_FIXER:
                     String dest2 = (String) extraInfo;
                     NodeLink link2 = this.state.getLinkTo(dest2);
-                    boolean isServer2 = this.state.isServer(dest2);
 
-                    sender.sendNewLink(dest2, link2, this.state.getSelf(), isServer2, true);
+                    sender.sendNewLink(dest2, link2, this.state.getSelf(), true);
                     break;
 
                 case FIX_STREAM:

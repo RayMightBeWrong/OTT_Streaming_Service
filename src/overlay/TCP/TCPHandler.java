@@ -40,8 +40,10 @@ public class TCPHandler {
         this.nodeType = nodeType;
         if (nodeType == NORMAL_NODE)
             this.senders = null;
-        else
+        else{
             this.senders = new HashMap<>();
+            this.state.addServer(this.state.getSelf());
+        }
     }
 
     public void run(){
@@ -51,7 +53,6 @@ public class TCPHandler {
             startInitialClientThreads();
 
             if (this.nodeType == SERVER_NODE){
-                this.state.addServer(this.state.getSelf());
                 this.video = new VideoStream("movie.Mjpeg");
                 startMonitoring();
             }
@@ -76,7 +77,7 @@ public class TCPHandler {
                 readHello(client, in, msg); break;
             }
             else if (isProbe(msg)){
-                readProbe(client, msg); break;
+                readProbe(client, in, msg); break;
             }
             else if (isNewLink(msg)){
                 readNewLink(client, in, msg, false); break;
@@ -169,7 +170,7 @@ public class TCPHandler {
         }
     }
     
-    public void readProbe(Socket client, String msg) throws InterruptedException{
+    public void readProbe(Socket client, BufferedReader in, String msg) throws Exception{
         boolean initialMsg = isProbeInitial(msg);
 
         LocalDateTime now = LocalDateTime.now();
@@ -182,8 +183,15 @@ public class TCPHandler {
             this.state.addLink(nodeName, link);
             sendNewLinkToAdjacents(nodeName);
         }
-        if(initialMsg)
+        if(initialMsg){
             sendRoutesToNewAdj(nodeName);
+
+            msg = in.readLine();
+            if (msg == null)
+                ;
+            else if (isPrefixOf(msg, "i am server"))
+                this.state.addServer(nodeName);
+        }
     }
 
     public void readNewLink(Socket client, BufferedReader in, String msg, boolean fixer) throws Exception{
@@ -196,7 +204,6 @@ public class TCPHandler {
         InetAddress viaInterface = null;
         int hops = 0;
         long cost = 0;
-        boolean isServer = false;
 
         while(true){
             msg = in.readLine();
@@ -215,9 +222,6 @@ public class TCPHandler {
                 if (adj != null)
                     cost += adj.getCost();
             }
-            else if (isPrefixOf(msg, "is server")){
-                isServer = true;
-            }
             else if (isPrefixOf(msg, "give to")){
                 destination = getSuffixFromPrefix(msg, "give to: ");
             }
@@ -230,23 +234,22 @@ public class TCPHandler {
                     NodeLink oldLink = this.state.getLinkTo(name);
                     this.state.addLink(name, newLink);
                     
-                    if (isServer)
-                        this.state.addServer(name);
                     sendNewLinkToAdjacents(name, viaNode);
 
-                    if(oldLink != null){
                         if ((this.state.isNodeReceivingStream(name))){
                             StreamLink stream = this.state.getStreamFromReceivingNode(name);
+                            System.out.println("you here bro?");
                             if ((fixer || stream.getActive() == false) 
                                     && this.state.getSelf().equals(stream.getReceivingNode()) == false
-                                    && viaNode.equals(stream.getServer()) == false)
+                                    && viaNode.equals(stream.getServer()) == false){
+                                        System.out.println("why no send");
                                 sendFixStream(viaNode, String.valueOf(stream.getStreamID()), stream.getReceivingNode(), this.state.getSelf(), new String[0]);
+                            }
                             else if (this.state.getSelf().equals(stream.getReceivingNode()) == false 
                                         && oldLink.getViaNode().equals(viaNode) == false
                                         && viaNode.equals(stream.getServer()) == false)
                                 sendChangeStream(viaNode, String.valueOf(stream.getStreamID()), stream.getReceivingNode(), this.state.getSelf(), new String[0]);
                         }
-                    }
 
                     printState();
                 }
@@ -267,6 +270,7 @@ public class TCPHandler {
         InetAddress viaInterface = null;
         int hops = 0;
         long cost = 0;
+        boolean isServer = false;
 
         while(true){
             msg = in.readLine();
@@ -287,6 +291,9 @@ public class TCPHandler {
                 NodeLink adj = this.state.getLinkTo(viaNode);
                 cost += adj.getCost();
             }
+            else if (isPrefixOf(msg, "is server")){
+                isServer = true;
+            }
             else if (isPrefixOf(msg, "route done")){
                 List<InetAddress> ips = this.state.findAddressesFromAdjNode(viaNode);
                 viaInterface = ips.get(0);
@@ -295,11 +302,10 @@ public class TCPHandler {
                     this.state.addLink(dest, newLink);
                     sendNewLinkToAdjacents(dest, viaNode);
                 }
-            }
-            else if (isPrefixOf(msg, "servers")){
-                String[] servers = getServers(msg);
-                for(String server: servers)
-                    this.state.addServer(server);
+                if (isServer){
+                    this.state.addServer(dest);
+                    isServer = false;
+                }
             }
             else if (isEnd(msg))
                 break;
@@ -319,7 +325,12 @@ public class TCPHandler {
             msg = in.readLine();
             
             if(isProbe(msg)){
-                readProbe(client, msg);
+                readProbe(client, in, msg);
+            }
+            else if (isPrefixOf(msg, "servers")){
+                String[] servers = getServers(msg);
+                for(String server: servers)
+                    this.state.addServer(server);
             }
             else if (isEnd(msg))
                 break;
