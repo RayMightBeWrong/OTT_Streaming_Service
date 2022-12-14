@@ -115,7 +115,7 @@ public class UDPMiddleMan extends Thread{
     }
 
     // TODO - fazer um para remover apenas os dependentes
-    public void removeAllMyStreams(StreamLink stream){
+    public void removeAllMyStreams(){
         this.myStreams = new HashMap<>();
     }
 

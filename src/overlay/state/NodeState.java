@@ -13,6 +13,7 @@ public class NodeState {
     private DistancesTable table;
     private List<StreamLink> streams;
     private List<String> servers;
+    private List<String> closedNodes;
     private final ReentrantLock lock;
     
     public NodeState(Vertex node, InetAddress bstrapperIP){
@@ -21,6 +22,7 @@ public class NodeState {
         this.table = new DistancesTable();
         this.streams = new ArrayList<>();
         this.servers = new ArrayList<>();
+        this.closedNodes = new ArrayList<>();
         this.lock = new ReentrantLock();
     }
 
@@ -127,11 +129,50 @@ public class NodeState {
         }
     }
 
+    public void addCloseNode(String node){
+        this.lock.lock();
+        try{
+            if(!node.equals("")){
+                boolean isPresent = isCloseNode(node);
+
+                if (isPresent == false)
+                    this.closedNodes.add(node);
+            }
+        }
+        finally{
+            this.lock.unlock();
+        }
+    }
+
+    public void removeClosedNode(String node){
+        this.lock.lock();
+        try{
+            if (!this.servers.contains(node))
+                this.servers.remove(node);
+        }
+        finally{
+            this.lock.unlock();
+        }
+    }
+
     public boolean isServer(String server){
         boolean isPresent = false;
             
         for(String s: this.servers){
             if(s.equals(server)){
+                isPresent = true;
+                break;
+            }
+        }
+
+        return isPresent;
+    }
+
+    public boolean isCloseNode(String node){
+        boolean isPresent = false;
+            
+        for(String s: this.closedNodes){
+            if(s.equals(node)){
                 isPresent = true;
                 break;
             }

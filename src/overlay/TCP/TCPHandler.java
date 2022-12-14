@@ -239,6 +239,9 @@ public class TCPHandler {
                 viaInterface = ips.get(0);
                 NodeLink newLink = new NodeLink(name, viaNode, viaInterface, hops, cost);
 
+                if (this.state.isCloseNode(name))
+                    this.state.removeClosedNode(name);
+
                 if((fixer && destination.equals(this.state.getSelf())) || this.state.isLinkModified(name, newLink)){
                     NodeLink oldLink = this.state.getLinkTo(name);
                     this.state.addLink(name, newLink);
@@ -448,7 +451,8 @@ public class TCPHandler {
                 break;
             }
 
-        if (this.state.getAdjState(closedNode) == Vertex.ON || isAdj == false){
+        if ((this.state.getAdjState(closedNode) == Vertex.ON || isAdj == false) && this.state.isCloseNode(closedNode) == false){
+            this.state.addCloseNode(closedNode);
             String from = this.state.findAdjNodeFromAddress(client.getInetAddress());
             List<String> lostNodes = this.state.handleClosedNode(closedNode);
             sendNodeClosed(from, closedNode);
@@ -515,7 +519,7 @@ public class TCPHandler {
             client.run();
 
             if (this.middleman.hasDependentStreams(stream))
-                this.middleman.removeAllMyStreams(stream);
+                this.middleman.removeAllMyStreams();
         }
 
         this.state.removeStream(stream);
@@ -569,7 +573,6 @@ public class TCPHandler {
             
                 if(stream != null){
                     if(this.state.getSelf().equals(stream.getServer()) == false){
-                        //sendStreamChanged(streamID, oldStream);
                         sendAckFixStream(streamID, stream, orderedBy);
                     }
                 }
@@ -663,10 +666,7 @@ public class TCPHandler {
 
         StreamLink stream = this.state.getStreamFromID(Integer.parseInt(streamID));
         if (stream != null){
-            if (state.getSelf().equals(stream.getReceivingNode()) == true){
-                System.out.println("chegou aqui");
-            }
-            else
+            if (state.getSelf().equals(stream.getReceivingNode()) == false)
                 sendStreamChanged(streamID, stream);
         }
     }
