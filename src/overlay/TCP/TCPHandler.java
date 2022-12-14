@@ -320,17 +320,14 @@ public class TCPHandler {
         String fromNode = args[args.length - 1];
         sendProbe(fromNode, false);
         sendMonitoringToAdjacents(args);
+        String server = args[0];
+        this.state.addServer(server);
 
         while(true){
             msg = in.readLine();
             
             if(isProbe(msg)){
                 readProbe(client, in, msg);
-            }
-            else if (isPrefixOf(msg, "servers")){
-                String[] servers = getServers(msg);
-                for(String server: servers)
-                    this.state.addServer(server);
             }
             else if (isEnd(msg))
                 break;
@@ -644,12 +641,6 @@ public class TCPHandler {
 
 
     /* THREAD FUNCTIONS */
-
-    public void redirectMessage(String dest, String message){
-        NodeLink link = this.state.getLinkTo(dest);
-        Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.REDIRECT, message));
-        client.run();
-    }
 
     public void startInitialClientThreads() throws InterruptedException{
         Map<String, Integer> adjsState = this.state.getNodeAdjacentsState();

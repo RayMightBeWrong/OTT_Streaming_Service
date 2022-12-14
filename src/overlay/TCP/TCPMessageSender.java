@@ -84,13 +84,6 @@ public class TCPMessageSender {
         else
             sendMessage("probe: regular: " + LocalDateTime.now());
 
-        List<String> servers = state.getServers();
-        StringBuilder sb = new StringBuilder();
-        sb.append("servers:");
-        for(String server: servers){
-            sb.append(" " + server);
-        }
-        sendMessage(sb.toString());
         end();
     }
 

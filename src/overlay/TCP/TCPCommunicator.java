@@ -19,7 +19,6 @@ public class TCPCommunicator extends Thread{
 
     public static final int HELLO = 1;
     public static final int HELLO_SERVER = 2;
-    public static final int REDIRECT = 3;
     public static final int PROBE_INITIAL = 4;
     public static final int PROBE_REGULAR = 5;
     public static final int SEND_NEW_LINK = 6;
@@ -71,11 +70,6 @@ public class TCPCommunicator extends Thread{
 
                 case HELLO_SERVER:
                     sender.helloServer(); break;
-
-                case REDIRECT:
-                    String msg = (String) extraInfo;
-                    sender.sendMessage(msg);
-                    break;
 
                 case PROBE_INITIAL:
                     sender.probe(true, this.state); break;
