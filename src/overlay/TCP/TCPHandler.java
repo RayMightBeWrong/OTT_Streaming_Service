@@ -751,8 +751,10 @@ public class TCPHandler {
             String nextNode = myStream.findNextNode(this.state.getSelf(), true);
             NodeLink link = this.state.getLinkTo(nextNode);
 
-            Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.CANCEL_STREAM, args));
-            client.run();
+            if (link != null){
+                Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.CANCEL_STREAM, args));
+                client.run();
+            }
             this.state.removeStream(myStream);
         }
     }
