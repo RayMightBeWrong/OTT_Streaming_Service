@@ -2,12 +2,10 @@ package streaming.UDP;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.List;
 import java.util.TimerTask;
 
-import overlay.TCP.TCPCommunicator;
 import overlay.state.NodeLink;
 import overlay.state.NodeState;
 import overlay.state.StreamLink;

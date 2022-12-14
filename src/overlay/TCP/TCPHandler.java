@@ -19,7 +19,6 @@ import overlay.state.StreamLink;
 import overlay.state.Vertex;
 import streaming.UDP.UDPMiddleMan;
 import streaming.UDP.UDPServer;
-import streaming.UDP.VideoStream;
 
 
 public class TCPHandler {
@@ -82,6 +81,9 @@ public class TCPHandler {
             else if (isNewLink(msg)){
                 readNewLink(client, in, msg, false); break;
             }
+            else if (isNewLinkFixer(msg)){
+                readNewLink(client, in, msg, true); break;
+            }
             else if (isRoutes(msg)){
                 readRoutes(in, msg); break;
             }
@@ -106,6 +108,14 @@ public class TCPHandler {
             else if (isRequestLink(msg)){
                 readRequestLink(client, msg); break;
             }
+
+
+
+
+
+
+
+            
             else if (isPauseStreamClient(msg)){
                 sendPauseStreaming(); break;
             }
@@ -123,21 +133,6 @@ public class TCPHandler {
             }
             else if (isEndStream(msg)){
                 readEndStream(msg); break;
-            }
-            else if (isNewLinkFixer(msg)){
-                readNewLink(client, in, msg, true); break;
-            }
-            else if (isFixStream(msg)){
-                readFixStream(false, in, msg); break;
-            }
-            else if (isAckFixStream(msg)){
-                readFixStream(true, in, msg); break;
-            }
-            else if (isChangeStream(msg)){
-                readChangeStream(false, in, msg); break;
-            }
-            else if (isAckChangeStream(msg)){
-                readChangeStream(true, in, msg); break;
             }
         }
 
@@ -238,11 +233,9 @@ public class TCPHandler {
 
                         if ((this.state.isNodeReceivingStream(name))){
                             StreamLink stream = this.state.getStreamFromReceivingNode(name);
-                            System.out.println("you here bro?");
                             if ((fixer || stream.getActive() == false) 
                                     && this.state.getSelf().equals(stream.getReceivingNode()) == false
                                     && viaNode.equals(stream.getServer()) == false){
-                                        System.out.println("why no send");
                                 sendFixStream(viaNode, String.valueOf(stream.getStreamID()), stream.getReceivingNode(), this.state.getSelf(), new String[0]);
                             }
                             else if (this.state.getSelf().equals(stream.getReceivingNode()) == false 
@@ -846,7 +839,7 @@ public class TCPHandler {
         Map<String, List<InetAddress>> adjs = this.state.getNodeAdjacents();
 
         for(Map.Entry<String, Integer> entry: adjsState.entrySet()){
-            if (entry.getValue() == Vertex.ON){
+            if (entry.getValue() == Vertex.ON && entry.getKey().equals(from) == false){
                 List<InetAddress> ips = adjs.get(entry.getKey());
                 Thread client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.CLOSED_NODE, node));
                 client.start();

@@ -4,10 +4,10 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Timer;
 import java.util.TimerTask;
 
 import overlay.TCP.TCPCommunicator;
@@ -24,6 +24,7 @@ public class UDPMiddleMan extends Thread{
     DatagramSocket sender;
     Map<Integer, RTPPacket> videoPackets;
     Map<Integer, TemporarySender> threads;
+    List<StreamLink> myStreams;
 
     byte[] buf;
     int bufLength = 15000;
@@ -37,6 +38,7 @@ public class UDPMiddleMan extends Thread{
             receiver = new DatagramSocket(UDPServer.PORT);
             rcvdp = new DatagramPacket(buf, buf.length);
             videoPackets = new HashMap<>();
+            this.myStreams = new ArrayList<>();
             threads = new HashMap<>();
         }
         catch(SocketException e){
@@ -53,28 +55,16 @@ public class UDPMiddleMan extends Thread{
                 receiver.receive(rcvdp);
 
                 RTPPacket rtp_packet = new RTPPacket(rcvdp.getData(), rcvdp.getLength());
-                videoPackets.put(rtp_packet.getsequencenumber() - 1, rtp_packet);
-                rtp_packet.printheader();
+                //videoPackets.put(rtp_packet.getsequencenumber() - 1, rtp_packet);
 
                 int streamID = rtp_packet.getStreamID();
-                StreamLink stream = this.state.getStreamFromID(streamID);
+                sendPacket(streamID, false, rtp_packet, 0);
+                    
+                for(StreamLink sLink: this.myStreams){
+                    System.out.println("streamID: " + sLink.getStreamID());
+                    sendPacket(sLink.getStreamID(), true, rtp_packet, rcvdp.getLength());
+                }
 
-                if (stream != null){
-                    String nextNode = stream.findNextNode(this.state.getSelf(), false);
-
-                    if (nextNode.equals(this.state.getSelf())){
-                        List<InetAddress> ips = this.state.getSelfIPs();
-                        senddp = new DatagramPacket(buf, buf.length, ips.get(0), OTTStreaming.RTP_PORT);
-                        sender.send(senddp);
-                    }
-                    else{
-                        NodeLink link = this.state.getLinkTo(nextNode);
-                        if (link != null){
-                            senddp = new DatagramPacket(buf, buf.length, link.getViaInterface(), UDPServer.PORT);
-                            sender.send(senddp);
-                        }
-                    }    
-                }            
             }
         }
         catch (Exception e){
@@ -82,11 +72,50 @@ public class UDPMiddleMan extends Thread{
         }
     }
 
+    public void sendPacket(int streamID, boolean changeID, RTPPacket rtp_packet, int packet_size) throws Exception{
+        StreamLink stream = this.state.getStreamFromID(streamID);
+
+        if (stream != null){
+            byte[] buffer = {};
+            if (changeID){
+                for(int i = 0; i < 5; i++)
+                    System.out.println(i + ": " + buf[i]);
+
+
+                rtp_packet.changeStreamID(streamID);
+                buffer = rtp_packet.getContent();
+
+                for(int i = 0; i < 5; i++)
+                    System.out.println(i + ": " + buf[i]);
+            }
+            else{
+                buffer = buf;
+            }
+            rtp_packet.printheader();
+
+            String nextNode = stream.findNextNode(this.state.getSelf(), false);
+
+            if (nextNode.equals(this.state.getSelf())){
+                List<InetAddress> ips = this.state.getSelfIPs();
+                senddp = new DatagramPacket(buffer, buffer.length, ips.get(0), OTTStreaming.RTP_PORT);
+                sender.send(senddp);
+            }
+            else{
+                NodeLink link = this.state.getLinkTo(nextNode);
+                if (link != null){
+                    senddp = new DatagramPacket(buffer, buffer.length, link.getViaInterface(), UDPServer.PORT);
+                    sender.send(senddp);
+                }
+            }    
+        }
+    }
+
     public void sendTo(StreamLink stream){
-        TemporarySender tmpSender = new TemporarySender(state, videoPackets, stream);
-        this.threads.put(stream.getStreamID(), tmpSender);
-        Timer timer = new Timer();
-        timer.schedule(tmpSender, 0, VideoSender.FRAME_PERIOD);
+        this.myStreams.add(stream);
+        //TemporarySender tmpSender = new TemporarySender(state, videoPackets, stream);
+        //this.threads.put(stream.getStreamID(), tmpSender);
+        //Timer timer = new Timer();
+        //timer.schedule(tmpSender, 0, VideoSender.FRAME_PERIOD);
     }
 
     public void pauseSender(int streamID){
