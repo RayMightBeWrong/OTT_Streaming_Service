@@ -108,16 +108,25 @@ public class TCPHandler {
             else if (isRequestLink(msg)){
                 readRequestLink(client, msg); break;
             }
-
-
-
-
-
-
-
-            
-            else if (isPauseStreamClient(msg)){
-                sendPauseStreaming(); break;
+            else if (isPrefixOf(msg, "fix stream")){
+                readFixStream(false, in, msg); break;
+            }
+            else if (isPrefixOf(msg, "ack fix stream")){
+                readFixStream(true, in, msg); break;
+            }
+            else if (isPrefixOf(msg, "change stream")){
+                readChangeStream(false, in, msg); break;
+            }
+            else if (isPrefixOf(msg, "ack change stream")){
+                readChangeStream(true, in, msg); break;
+            }
+            else if (isPrefixOf(msg, "stream changed")){
+                readStreamChanged(in, msg); break;
+            }
+            else if (isPrefixOf(msg, "stream broken client")){
+                sendCancelStream();
+                sendStreamRequest();
+                break;
             }
             else if (isPauseStream(msg)){
                 readPauseStream(msg); break;
@@ -128,11 +137,16 @@ public class TCPHandler {
             else if (isCancelStream(msg)){
                 readCancelStream(msg); break;
             }
-            else if (isEndStreamClient(msg)){
-                sendEndStream(msg); break;
+
+
+
+
+            
+            else if (isPauseStreamClient(msg)){
+                sendPauseStreaming(); break;
             }
-            else if (isEndStream(msg)){
-                readEndStream(msg); break;
+            else if (isPauseStream(msg)){
+                readPauseStream(msg); break;
             }
         }
 
@@ -239,6 +253,7 @@ public class TCPHandler {
                                 sendFixStream(viaNode, String.valueOf(stream.getStreamID()), stream.getReceivingNode(), this.state.getSelf(), new String[0]);
                             }
                             else if (this.state.getSelf().equals(stream.getReceivingNode()) == false 
+                                        && oldLink != null
                                         && oldLink.getViaNode().equals(viaNode) == false
                                         && viaNode.equals(stream.getServer()) == false)
                                 sendChangeStream(viaNode, String.valueOf(stream.getStreamID()), stream.getReceivingNode(), this.state.getSelf(), new String[0]);
@@ -487,11 +502,10 @@ public class TCPHandler {
 
         if (this.state.getSelf().equals(args[0])){
             if (this.state.isServer(this.state.getSelf())){
-                this.senders.get(stream.getReceivingNode()).cancelSender();
-                this.senders.remove(stream.getReceivingNode());
+                this.state.removeStream(stream);
             }
             else
-                this.middleman.turnOffSender(stream.getStreamID());
+                this.middleman.doNotSendTo(stream);
         }
         else{
             String nextNode = stream.findNextNode(this.state.getSelf(), true);
@@ -499,6 +513,9 @@ public class TCPHandler {
 
             Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.CANCEL_STREAM, args));
             client.run();
+
+            if (this.middleman.hasDependentStreams(stream))
+                this.middleman.removeAllMyStreams(stream);
         }
 
         this.state.removeStream(stream);
@@ -552,6 +569,7 @@ public class TCPHandler {
             
                 if(stream != null){
                     if(this.state.getSelf().equals(stream.getServer()) == false){
+                        //sendStreamChanged(streamID, oldStream);
                         sendAckFixStream(streamID, stream, orderedBy);
                     }
                 }
@@ -622,6 +640,34 @@ public class TCPHandler {
                 StreamLink stream = this.state.changeStream(streamID, rcv, nodesVisited, orderedBy);
                 sendAckChangeStream(streamID, stream, orderedBy);
             }
+        }
+    }
+
+    public void readStreamChanged(BufferedReader in, String msg) throws Exception{
+        String streamID = getSuffixFromPrefix(msg, "stream changed: ");
+        String rcv = "";
+        String[] nodesVisited = {};
+
+        while(true){
+            msg = in.readLine();
+
+            if(isPrefixOf(msg, "leading to"))
+                rcv = getSuffixFromPrefix(msg, "leading to: ");
+            else if (isPrefixOf(msg, "going through")){
+                nodesVisited = getNodesVisited(msg, "going through: ");
+            }
+            else if (isEnd(msg)){
+                break;
+            }
+        }
+
+        StreamLink stream = this.state.getStreamFromID(Integer.parseInt(streamID));
+        if (stream != null){
+            if (state.getSelf().equals(stream.getReceivingNode()) == true){
+                System.out.println("chegou aqui");
+            }
+            else
+                sendStreamChanged(streamID, stream);
         }
     }
 
@@ -893,6 +939,7 @@ public class TCPHandler {
             args[i + 3] = path.get(i);
 
         String nextNode = stream.findNextNode(this.state.getSelf(), true);
+        System.out.println("nextNode: " + nextNode);
         NodeLink link = this.state.getLinkTo(nextNode);
         Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.ACK_FIX_STREAM, args));
         client.run();
@@ -930,6 +977,20 @@ public class TCPHandler {
         String nextNode = stream.findNextNode(this.state.getSelf(), true);
         NodeLink link = this.state.getLinkTo(nextNode);
         Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.ACK_CHANGE_STREAM, args));
+        client.run();
+    }
+
+    public void sendStreamChanged(String streamID, StreamLink stream) throws Exception{
+        List<String> path = stream.getStream();
+        String[] args = new String[1 + path.size()];
+        args[0] = streamID;
+        args[1] = path.get(path.size() - 1);
+        for(int i = 0; i < path.size() - 1; i++)
+            args[i + 2] = path.get(i);
+
+        String nextNode = stream.findNextNode(this.state.getSelf(), true);
+        NodeLink link = this.state.getLinkTo(nextNode);
+        Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.STREAM_CHANGED_COURSE, args));
         client.run();
     }
 

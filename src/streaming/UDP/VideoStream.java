@@ -51,12 +51,6 @@ public class VideoStream {
 
         fis.read(frameLength, 0, 5);
 
-        StringBuilder sb = new StringBuilder();
-        for(int i = 0; i < frameLength.length; i++)
-            sb.append(i + ": " + frameLength[i] + "\n");
-        sb.append("\n");
-        System.out.println(sb);
-
         lengthString = new String(frameLength);
         length = Integer.parseInt(lengthString);
 

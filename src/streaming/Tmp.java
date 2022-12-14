@@ -17,14 +17,14 @@ public class Tmp {
             client = new TCPCommunicator(null, ip, TCPCommunicator.OPEN_STREAM_CLIENT);
             client.run();
 
-            tmpMethod();
+            tmpMethod(ip);
         }
         catch(Exception e){
             e.printStackTrace();
         }
     }
 
-    public static void tmpMethod() throws Exception{
+    public static void tmpMethod(InetAddress ip) throws Exception{
         byte[] cBuf = new byte[15000];
 
         DatagramSocket RTPsocket = new DatagramSocket(OTTStreaming.RTP_PORT);
@@ -40,6 +40,9 @@ public class Tmp {
                 rtp_packet.printheader();
             }
             catch(InterruptedIOException iioe){
+                TCPCommunicator client;
+                client = new TCPCommunicator(null, ip, TCPCommunicator.STREAM_BROKEN_CLIENT);
+                client.run();
                 System.out.println("Nothing to read");
             }
             catch(IOException ioe){

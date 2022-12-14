@@ -24,7 +24,7 @@ public class UDPMiddleMan extends Thread{
     DatagramSocket sender;
     Map<Integer, RTPPacket> videoPackets;
     Map<Integer, TemporarySender> threads;
-    List<StreamLink> myStreams;
+    Map<Integer, StreamLink> myStreams;
 
     byte[] buf;
     int bufLength = 15000;
@@ -38,7 +38,7 @@ public class UDPMiddleMan extends Thread{
             receiver = new DatagramSocket(UDPServer.PORT);
             rcvdp = new DatagramPacket(buf, buf.length);
             videoPackets = new HashMap<>();
-            this.myStreams = new ArrayList<>();
+            this.myStreams = new HashMap<>();
             threads = new HashMap<>();
         }
         catch(SocketException e){
@@ -60,9 +60,8 @@ public class UDPMiddleMan extends Thread{
                 int streamID = rtp_packet.getStreamID();
                 sendPacket(streamID, false, rtp_packet, 0);
                     
-                for(StreamLink sLink: this.myStreams){
-                    System.out.println("streamID: " + sLink.getStreamID());
-                    sendPacket(sLink.getStreamID(), true, rtp_packet, rcvdp.getLength());
+                for(Map.Entry<Integer, StreamLink> entry: this.myStreams.entrySet()){
+                    sendPacket(entry.getValue().getStreamID(), true, rtp_packet, rcvdp.getLength());
                 }
 
             }
@@ -78,15 +77,8 @@ public class UDPMiddleMan extends Thread{
         if (stream != null){
             byte[] buffer = {};
             if (changeID){
-                for(int i = 0; i < 5; i++)
-                    System.out.println(i + ": " + buf[i]);
-
-
                 rtp_packet.changeStreamID(streamID);
                 buffer = rtp_packet.getContent();
-
-                for(int i = 0; i < 5; i++)
-                    System.out.println(i + ": " + buf[i]);
             }
             else{
                 buffer = buf;
@@ -111,11 +103,24 @@ public class UDPMiddleMan extends Thread{
     }
 
     public void sendTo(StreamLink stream){
-        this.myStreams.add(stream);
+        this.myStreams.put(stream.getStreamID(), stream);
         //TemporarySender tmpSender = new TemporarySender(state, videoPackets, stream);
         //this.threads.put(stream.getStreamID(), tmpSender);
         //Timer timer = new Timer();
         //timer.schedule(tmpSender, 0, VideoSender.FRAME_PERIOD);
+    }
+
+    public void doNotSendTo(StreamLink stream){
+        this.myStreams.remove(stream.getStreamID(), stream);
+    }
+
+    // TODO - fazer um para remover apenas os dependentes
+    public void removeAllMyStreams(StreamLink stream){
+        this.myStreams = new HashMap<>();
+    }
+
+    public boolean hasDependentStreams(StreamLink stream){
+        return this.myStreams.size() > 0;
     }
 
     public void pauseSender(int streamID){

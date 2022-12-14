@@ -43,6 +43,9 @@ public class TCPCommunicator extends Thread{
     public static final int ACK_FIX_STREAM = 26;
     public static final int CHANGE_STREAM = 27;
     public static final int ACK_CHANGE_STREAM = 28;
+    public static final int STREAM_CHANGED_COURSE = 29;
+    public static final int STREAM_BROKEN_CLIENT = 30;
+    public static final int STREAM_BROKEN = 31;
 
 
     public TCPCommunicator(NodeState state, InetAddress neighbor, int behaviour){
@@ -181,6 +184,18 @@ public class TCPCommunicator extends Thread{
                 case ACK_CHANGE_STREAM:
                     String[] args5 = (String[]) extraInfo;
                     sender.ackChangeStream(args5);
+                    break;
+
+                case STREAM_CHANGED_COURSE:
+                    String[] args6 = (String[]) extraInfo;
+                    sender.streamChangedCourse(args6);
+                    break;
+
+                case STREAM_BROKEN_CLIENT:
+                    sender.streamBrokenClient(); break;
+
+                case STREAM_BROKEN:
+                    //sender.streamBroken(); 
                     break;
             }
 

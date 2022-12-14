@@ -286,6 +286,25 @@ public class TCPMessageSender {
         end();
     }
 
+
+    public void streamChangedCourse(String[] args){
+        sendMessage("stream changed: " + args[0]);
+        sendMessage("leading to: " + args[1]);
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("going through:");
+        for(int i = 2; i < args.length; i++)
+            sb.append(" " + args[i]);
+
+        sendMessage(sb.toString());
+        end();
+    }
+
+    public void streamBrokenClient(){
+        sendMessage("stream broken client");
+    }
+
+
     public void end(){
         sendMessage("end");
     }

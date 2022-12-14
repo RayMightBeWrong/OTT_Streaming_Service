@@ -61,29 +61,31 @@ public class VideoSender extends TimerTask{
                     List<StreamLink> streams = this.state.getStreamLinks();
 
                     for(StreamLink slink: streams){
-                        RTPPacket RTPPacket = new RTPPacket(slink.getStreamID(), imagenb, imagenb * FRAME_PERIOD, buf, imageLength);
-                        int packetLength = RTPPacket.getlength();
+                        if(slink != null){
+                            RTPPacket RTPPacket = new RTPPacket(slink.getStreamID(), imagenb, imagenb * FRAME_PERIOD, buf, imageLength);
+                            int packetLength = RTPPacket.getlength();
   
-                        byte[] packet_bits = new byte[packetLength];
-                        RTPPacket.getpacket(packet_bits);
+                            byte[] packet_bits = new byte[packetLength];
+                            RTPPacket.getpacket(packet_bits);
   
-                        int streamID = RTPPacket.getStreamID();
-                        StreamLink stream = this.state.getStreamFromID(streamID);
+                            int streamID = RTPPacket.getStreamID();
+                            StreamLink stream = this.state.getStreamFromID(streamID);
 
-                        if (stream.getActive() == true){
-                            String nextNode = stream.findNextNode(this.state.getSelf(), false);
-                            NodeLink link = this.state.getLinkTo(nextNode);
-                            if (link != null){
-                                senddp = new DatagramPacket(packet_bits, packetLength, link.getViaInterface(), RTP_PORT);
-                                RTPsocket.send(senddp);
+                            if (stream.getActive() == true){
+                                String nextNode = stream.findNextNode(this.state.getSelf(), false);
+                                NodeLink link = this.state.getLinkTo(nextNode);
+                                if (link != null){
+                                    senddp = new DatagramPacket(packet_bits, packetLength, link.getViaInterface(), RTP_PORT);
+                                    RTPsocket.send(senddp);
   
-                                RTPPacket.printheader();
+                                    RTPPacket.printheader();
+                                }
+                                else
+                                    imagenb--;
                             }
                             else
                                 imagenb--;
                         }
-                        else
-                            imagenb--;
                     }
                 }
                 catch(Exception e){
