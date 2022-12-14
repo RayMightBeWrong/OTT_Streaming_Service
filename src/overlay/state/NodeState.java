@@ -36,6 +36,10 @@ public class NodeState {
         return this.servers;
     }
 
+    public List<StreamLink> getStreamLinks(){
+        return this.streams;
+    }
+
     public int getNrStreams(){
         return this.streams.size();
     }
@@ -126,9 +130,7 @@ public class NodeState {
     public boolean isServer(String server){
         boolean isPresent = false;
             
-        System.out.println("POSSIBLE SERVER: " + server);
         for(String s: this.servers){
-            System.out.println("POSSIBLE: " + s); 
             if(s.equals(server)){
                 isPresent = true;
                 break;

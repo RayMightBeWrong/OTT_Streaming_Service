@@ -26,8 +26,8 @@ public class TCPHandler {
     private NodeState state;
     private int nodeType;
     private Map<String, UDPServer> senders;
+    private UDPServer server;
     private UDPMiddleMan middleman;
-    private VideoStream video;
 
     public static final int PORT = 6667;
 
@@ -53,7 +53,7 @@ public class TCPHandler {
             startInitialClientThreads();
 
             if (this.nodeType == SERVER_NODE){
-                this.video = new VideoStream("movie.Mjpeg");
+                startUDPServer();
                 startMonitoring();
             }
 
@@ -422,9 +422,7 @@ public class TCPHandler {
         if (this.state.getSelf().equals(args[1])){
             String from = this.state.findAdjNodeFromAddress(client.getInetAddress());
 
-            if(this.state.isServer(this.state.getSelf()))
-                startVideoSender(stream, from);
-            else
+            if(this.state.isServer(this.state.getSelf()) == false)
                 this.middleman.sendTo(stream);
         }
         else{
@@ -444,15 +442,10 @@ public class TCPHandler {
 
         if (this.state.getAdjState(closedNode) == Vertex.ON || isAdj == false){
             String from = this.state.findAdjNodeFromAddress(client.getInetAddress());
-            NodeLink link = this.state.getLinkTo(closedNode);
-
-            if (link != null){
-                List<String> lostNodes = this.state.handleClosedNode(closedNode);
-
-                sendNodeClosed(from, closedNode);
-                if (lostNodes.size() > 0)
-                    askLinkTo(lostNodes);
-            }
+            List<String> lostNodes = this.state.handleClosedNode(closedNode);
+            sendNodeClosed(from, closedNode);
+            if (lostNodes.size() > 0)
+                askLinkTo(lostNodes);
 
             printState();
         }
@@ -669,11 +662,10 @@ public class TCPHandler {
         client.join();
     }
 
-    public void startVideoSender(StreamLink stream, String dest){
-        List<InetAddress> ips = this.state.getSelfIPs();
-        UDPServer UDPServer = new UDPServer(ips.get(0), stream, this.state, video);
-        UDPServer.start();
-        this.senders.put(stream.getReceivingNode(), UDPServer);
+    public void startUDPServer(){
+        UDPServer server = new UDPServer(this.state);
+        this.server = server;
+        server.start();
     }
 
     public void startUDPMiddleMan(){
