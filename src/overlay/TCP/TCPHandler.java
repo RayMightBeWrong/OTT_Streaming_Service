@@ -467,24 +467,6 @@ public class TCPHandler {
         }
     }
 
-    public void readPauseStream(String msg) throws Exception{
-        String[] args = getNodesVisited(msg, "pause stream: ");
-
-        if (this.state.getSelf().equals(args[0])){
-            StreamLink stream = this.state.getStreamFromArgs(args);
-            if (this.state.isServer(this.state.getSelf()))
-                this.senders.get(stream.getReceivingNode()).pauseSender();
-        }
-        else{
-            StreamLink stream = this.state.getStreamFromArgs(args);
-            String nextNode = stream.findNextNode(this.state.getSelf(), true);
-            NodeLink link = this.state.getLinkTo(nextNode);
-
-            Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.PAUSE_STREAMING, args));
-            client.run();
-        }
-    }
-
     public void readCancelStream(String msg) throws Exception{
         String[] args = getNodesVisited(msg, "cancel stream: ");
 
@@ -499,9 +481,9 @@ public class TCPHandler {
         }
         else{
             String nextNode = stream.findNextNode(this.state.getSelf(), true);
-            NodeLink link = this.state.getLinkTo(nextNode);
 
-            Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.CANCEL_STREAM, args));
+            List<InetAddress> ips = this.state.findAddressesFromAdjNode(nextNode);
+            Thread client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.CANCEL_STREAM, args));
             client.run();
 
             if (this.middleman.hasDependentStreams(stream))
@@ -510,21 +492,7 @@ public class TCPHandler {
 
         this.state.removeStream(stream);
     }
-
-    public void readEndStream(String msg) throws Exception{
-        String[] args = getNodesVisited(msg, "end stream: ");
-        StreamLink stream = this.state.getStreamFromArgs(args);
-
-        if (this.state.getSelf().equals(stream.getReceivingNode()) == false){
-            String nextNode = stream.findNextNode(this.state.getSelf(), false);
-            NodeLink link = this.state.getLinkTo(nextNode);
-
-            Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.END_STREAM, args));
-            client.run();
-        }
-
-        this.state.removeStream(stream);
-    }
+    
 
     public void readFixStream(boolean ack, BufferedReader in, String msg) throws Exception{
         String streamID;
