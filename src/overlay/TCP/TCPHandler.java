@@ -128,25 +128,11 @@ public class TCPHandler {
                 sendStreamRequest();
                 break;
             }
-            else if (isPauseStream(msg)){
-                readPauseStream(msg); break;
-            }
             else if (isCancelStreamClient(msg)){
                 sendCancelStream(); break;
             }
             else if (isCancelStream(msg)){
                 readCancelStream(msg); break;
-            }
-
-
-
-
-            
-            else if (isPauseStreamClient(msg)){
-                sendPauseStreaming(); break;
-            }
-            else if (isPauseStream(msg)){
-                readPauseStream(msg); break;
             }
         }
 
@@ -733,46 +719,20 @@ public class TCPHandler {
         client.run();
     }
 
-    public void sendPauseStreaming(){
-        StreamLink myStream = this.state.getMyStream();
-        String[] args = myStream.convertLinkToArgs();
-        String nextNode = myStream.findNextNode(this.state.getSelf(), true);
-        NodeLink link = this.state.getLinkTo(nextNode);
-
-        Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.PAUSE_STREAMING, args));
-        client.run();
-    }
-
     public void sendCancelStream() throws Exception{
         StreamLink myStream = this.state.getMyStream();
 
         if(myStream != null){
             String[] args = myStream.convertLinkToArgs();
             String nextNode = myStream.findNextNode(this.state.getSelf(), true);
-            NodeLink link = this.state.getLinkTo(nextNode);
-
-            if (link != null){
-                Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.CANCEL_STREAM, args));
+            List<InetAddress> ips = this.state.findAddressesFromAdjNode(nextNode);
+            
+            if (ips != null){
+                Thread client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.CANCEL_STREAM, args));
                 client.run();
             }
             this.state.removeStream(myStream);
         }
-    }
-
-    public void sendEndStream(String msg) throws Exception{
-        String[] args = getNodesVisited(msg, "end stream client: ");
-        StreamLink stream = this.state.getStreamFromArgs(args);
-        String nextNode = stream.findNextNode(this.state.getSelf(), false);
-        NodeLink link = this.state.getLinkTo(nextNode);
-
-        Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.END_STREAM, args));
-        client.run();
-
-        if (this.state.isServer(this.state.getSelf())){
-            this.senders.get(stream.getReceivingNode()).cancelSender();
-            this.senders.remove(stream.getReceivingNode());
-        }
-        this.state.removeStream(stream);
     }
 
     public void sendProbe(String key, boolean initial) throws InterruptedException{
@@ -789,13 +749,13 @@ public class TCPHandler {
     }
 
     public void sendNewLinkToAdjacent(String fromNode, String to, boolean fixer) throws InterruptedException{
-        NodeLink link = this.state.getLinkTo(fromNode);
+        List<InetAddress> ips = this.state.findAddressesFromAdjNode(fromNode);
 
         Thread client;
         if (fixer)
-            client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.SEND_NEW_LINK_FIXER, to));
+            client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.SEND_NEW_LINK_FIXER, to));
         else
-            client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.SEND_NEW_LINK, to));
+            client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.SEND_NEW_LINK, to));
         client.start();
         client.join();
     }
@@ -877,8 +837,9 @@ public class TCPHandler {
                 break;
             }
         }
-        NodeLink link = this.state.getLinkTo(dest);
-        Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.ACK_OPEN_UDP_MIDDLEMAN, args));
+
+        List<InetAddress> ips = this.state.findAddressesFromAdjNode(dest);
+        Thread client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.ACK_OPEN_UDP_MIDDLEMAN, args));
         client.start();
     }
 
@@ -923,10 +884,10 @@ public class TCPHandler {
         }
         args[i + 3] = this.state.getSelf();
 
-        NodeLink link = this.state.getLinkTo(dest);
+        List<InetAddress> ips = this.state.findAddressesFromAdjNode(dest);
         StreamLink stream = this.state.getStreamFromID(Integer.parseInt(streamID));
-        if (stream == null || link.getViaNode().equals(stream.getServer()) == false){
-            Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.FIX_STREAM, args));
+        if (stream == null || dest.equals(stream.getServer()) == false){
+            Thread client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.FIX_STREAM, args));
             client.start();
         }
     }
@@ -941,9 +902,8 @@ public class TCPHandler {
             args[i + 3] = path.get(i);
 
         String nextNode = stream.findNextNode(this.state.getSelf(), true);
-        System.out.println("nextNode: " + nextNode);
-        NodeLink link = this.state.getLinkTo(nextNode);
-        Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.ACK_FIX_STREAM, args));
+        List<InetAddress> ips = this.state.findAddressesFromAdjNode(nextNode);
+        Thread client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.ACK_FIX_STREAM, args));
         client.run();
     }
 
@@ -958,10 +918,10 @@ public class TCPHandler {
         }
         args[i + 3] = this.state.getSelf();
 
-        NodeLink link = this.state.getLinkTo(dest);
+        List<InetAddress> ips = this.state.findAddressesFromAdjNode(dest);
         StreamLink stream = this.state.getStreamFromID(Integer.parseInt(streamID));
-        if (stream == null || link.getViaNode().equals(stream.getServer()) == false){
-            Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.CHANGE_STREAM, args));
+        if (stream == null || dest.equals(stream.getServer()) == false){
+            Thread client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.CHANGE_STREAM, args));
             client.start();
         }
     }
@@ -977,8 +937,8 @@ public class TCPHandler {
             args[i + 3] = path.get(i);
 
         String nextNode = stream.findNextNode(this.state.getSelf(), true);
-        NodeLink link = this.state.getLinkTo(nextNode);
-        Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.ACK_CHANGE_STREAM, args));
+        List<InetAddress> ips = this.state.findAddressesFromAdjNode(nextNode);
+        Thread client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.ACK_CHANGE_STREAM, args));
         client.run();
     }
 
@@ -991,8 +951,8 @@ public class TCPHandler {
             args[i + 2] = path.get(i);
 
         String nextNode = stream.findNextNode(this.state.getSelf(), true);
-        NodeLink link = this.state.getLinkTo(nextNode);
-        Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.STREAM_CHANGED_COURSE, args));
+        List<InetAddress> ips = this.state.findAddressesFromAdjNode(nextNode);
+        Thread client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.STREAM_CHANGED_COURSE, args));
         client.run();
     }
 
