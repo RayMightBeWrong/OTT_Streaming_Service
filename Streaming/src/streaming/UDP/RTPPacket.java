@@ -113,7 +113,7 @@ public class RTPPacket {
         return sequenceNr;
     }
 
-
+    // replica o conteúdo de um pacote
     public byte[] getContent(){
         byte[] res = new byte[header.length + payload.length];
         int i = 0;

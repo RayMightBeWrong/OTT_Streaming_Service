@@ -8,15 +8,19 @@ import java.util.Map;
 
 public class Vertex {
     private String name;
+    // lista de interfaces do próprio nodo
     private List<InetAddress> ipList;
+    // interfaces dos adjacentes do nodo
     private Map<String, List<InetAddress>> adjacents;
+    // estado dos adjacented do nodo
     private Map<String, Integer> adjsState;
+    // estado do nodo (ON / OFF)
     private int state;
 
     public static final int ON = 1;
     public static final int OFF = 2;
 
-    // Graph vertex
+    // Graph Vertex
     public Vertex(String name, List<InetAddress> ips, int state){
         this.name = name;
         this.ipList = ips;

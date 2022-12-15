@@ -22,7 +22,7 @@ public class UDPMiddleMan extends Thread{
     DatagramPacket rcvdp;
     DatagramSocket receiver;
     DatagramSocket sender;
-    Map<Integer, RTPPacket> videoPackets;
+    // stream dos quais é o nodo responsável
     Map<Integer, StreamLink> myStreams;
 
     byte[] buf;
@@ -36,7 +36,6 @@ public class UDPMiddleMan extends Thread{
             sender = new DatagramSocket();
             receiver = new DatagramSocket(UDPServer.PORT);
             rcvdp = new DatagramPacket(buf, buf.length);
-            videoPackets = new HashMap<>();
             this.myStreams = new HashMap<>();
         }
         catch(SocketException e){
@@ -53,11 +52,12 @@ public class UDPMiddleMan extends Thread{
                 receiver.receive(rcvdp);
 
                 RTPPacket rtp_packet = new RTPPacket(rcvdp.getData(), rcvdp.getLength());
-                //videoPackets.put(rtp_packet.getsequencenumber() - 1, rtp_packet);
 
                 int streamID = rtp_packet.getStreamID();
+                // reencaminha pacotes
                 sendPacket(streamID, false, rtp_packet, 0);
-                    
+                
+                // replica os pacotes para as streams das quais é o nodo responsável
                 for(Map.Entry<Integer, StreamLink> entry: this.myStreams.entrySet()){
                     sendPacket(entry.getValue().getStreamID(), true, rtp_packet, rcvdp.getLength());
                 }
@@ -100,10 +100,12 @@ public class UDPMiddleMan extends Thread{
         }
     }
 
+    // adiciona stream à lista das quais é responsável
     public void sendTo(StreamLink stream){
         this.myStreams.put(stream.getStreamID(), stream);
     }
 
+    // remove stream à lista das quais é responsável
     public void doNotSendTo(StreamLink stream){
         this.myStreams.remove(stream.getStreamID(), stream);
     }

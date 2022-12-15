@@ -48,6 +48,7 @@ public class BStrapper extends Thread{
             System.out.println("B: " + msg);
 
             if (msg.equals("hello")){
+                // se receber "hello", envia ao nodo informações sobre ele e os seus vizinhos
                 String nodeName = this.graph.getNameFromIP(client.getInetAddress());
                 this.graph.setNodeState(nodeName, Vertex.ON);
                 List<InetAddress> ips = this.graph.getNodeIPList(nodeName);
@@ -56,6 +57,7 @@ public class BStrapper extends Thread{
                 sender.initialMessageBootstrapper(nodeName, ips, adjs, adjsState);
             }
             else if (TCPHandler.isPrefixOf(msg, "node closed")){
+                // se recebe informação que um nodo se fechou, envia essa informação aos adjacentes do nodo que se fechou
                 String closedNode = TCPHandler.getSuffixFromPrefix(msg, "node closed: ");
 
                 if (this.graph.getNodeState(closedNode) == Vertex.ON){

@@ -16,7 +16,6 @@ import streaming.UDP.RTPPacket;
 public class OTTStreaming {
     private JFrame frame;
     private JButton runButton;
-    private JButton pausePlayButton;
     private JButton teardownButton;
     private JPanel mainPanel;
     private JPanel buttonPanel;
@@ -39,7 +38,6 @@ public class OTTStreaming {
             connectorIP = InetAddress.getByName(ipName);
             frame = new JFrame("STREAM CLIENT");
             runButton = new JButton("RUN");
-            //pausePlayButton = new JButton("PAUSE / PLAY");
             teardownButton = new JButton("TEARDOWN");
             mainPanel = new JPanel();
             buttonPanel = new JPanel();
@@ -53,11 +51,9 @@ public class OTTStreaming {
 
             buttonPanel.setLayout(new GridLayout(1, 0));
             buttonPanel.add(runButton);
-            //buttonPanel.add(pausePlayButton);
             buttonPanel.add(teardownButton);
 
             runButton.addActionListener(new RunButtonListener());
-            //pausePlayButton.addActionListener(new PausePlayButtonListener());
             teardownButton.addActionListener(new TeardownButtonListener());
 
             iconLabel.setIcon(null);
@@ -87,30 +83,6 @@ public class OTTStreaming {
             new OTTStreaming(args[0]);
     }
 
-    public static void tmpMethod() throws Exception{
-        byte[] cBuf = new byte[15000];
-
-        DatagramSocket RTPsocket = new DatagramSocket(RTP_PORT);
-        RTPsocket.setSoTimeout(5000);
-
-        while(true){
-            DatagramPacket rcvdp = new DatagramPacket(cBuf, 15000);
-
-            try{
-                RTPsocket.receive(rcvdp);
-
-                RTPPacket rtp_packet = new RTPPacket(rcvdp.getData(), rcvdp.getLength());
-                rtp_packet.printheader();
-            }
-            catch(InterruptedIOException iioe){
-                System.out.println("Nothing to read");
-            }
-            catch(IOException ioe){
-                System.out.println("Exception caught: " + ioe);
-            }
-        }
-    }
-
     class RunButtonListener implements ActionListener{
         public void actionPerformed(ActionEvent e){
             System.out.println("PLAY button pressed!");
@@ -122,18 +94,6 @@ public class OTTStreaming {
             running = true;
         }
     }
-
-    /*
-    class PausePlayButtonListener implements ActionListener{
-        public void actionPerformed(ActionEvent e){
-            System.out.println("PAUSE button pressed!");
-
-            TCPCommunicator client;
-            client = new TCPCommunicator(null, connectorIP, TCPCommunicator.PAUSE_STREAM_CLIENT);
-            client.run();
-        }
-    }
-     */
 
     class TeardownButtonListener implements ActionListener{
         public void actionPerformed(ActionEvent e){
@@ -173,6 +133,7 @@ public class OTTStreaming {
                     client.run();
                     System.out.println("Nothing to read");
                 }
+                // depois de enviar um aviso que a stream está estragado, só o volta a fazer 15 segundos depois
                 errorI ++;
                 if (errorI == 5)
                     errorI = 0;

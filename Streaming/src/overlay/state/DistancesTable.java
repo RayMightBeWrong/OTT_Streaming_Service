@@ -9,6 +9,7 @@ import java.util.Map;
 public class DistancesTable {
     private Map<String, NodeLink> table;
 
+    // tabela de distâncias de vetores, representado como um Map em que a chave é o nome do nodo, e o valor é a ligação ao nodo da chave
     public DistancesTable(){
         this.table = new HashMap<>();
     }
@@ -34,6 +35,7 @@ public class DistancesTable {
         return this.table.get(key);
     }
 
+    // determina que nodo de uma lista é que está mais próxima, segunda a tabela (usada para determinar o servidor mais próximo)
     public NodeLink getClosestFromList(List<String> list){
         boolean initial = true;
         NodeLink min = new NodeLink();
@@ -54,6 +56,7 @@ public class DistancesTable {
         return min;
     }
 
+    // verifica se o estado da ligação atual mudou ou se surgiu uma melhor
     public boolean isLinkModified(String me, String key, NodeLink newLink){
         if (me.equals(key))
             return false;
@@ -77,6 +80,7 @@ public class DistancesTable {
         return false;
     }
 
+    // remove as ligações dependentes de um nodo que se fechou, e devolve uma lista com os nomes dos nodos que foram removidos da tabela (exceto o nodo que se desligou)
     public List<String> handleClosedNode(String key){
         List<String> res = new ArrayList<>();
 

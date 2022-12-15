@@ -2,11 +2,17 @@ package overlay.state;
 
 import java.net.InetAddress;
 
+// representa uma ligação
 public class NodeLink {
+    // nodo a que se pretende chegar
     private String dest;
+    // nodo que se deve seguir
     private String viaNode;
+    // IP da interface que se deve seguir
     private InetAddress viaInterface;
+    // número de saltos
     private int hops;
+    // tempo estimado até ao destino
     private long cost;
 
     public NodeLink(){}

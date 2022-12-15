@@ -7,12 +7,17 @@ import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 
 
+// representa o estado de um nodo
 public class NodeState {
     private Vertex node;
     private InetAddress bstrapperIP;
+    // tabela de distâncias de vetores
     private DistancesTable table;
+    // lista de streams que passam ou passaram pelo nodo
     private List<StreamLink> streams;
+    // lista de servidores na topologia
     private List<String> servers;
+    // lista de nodos que já se fecharam (para evitar floods infinitos)
     private List<String> closedNodes;
     private final ReentrantLock lock;
     
@@ -223,6 +228,7 @@ public class NodeState {
         return this.table.isLinkModified(getSelf(), key, newLink);
     }
 
+    // devolve uma stream que tem este nodo como destino
     public StreamLink getMyStream(){
         StreamLink res = null;
 
@@ -253,6 +259,7 @@ public class NodeState {
         return res;
     }
 
+    // devolve uma stream a partir de um array com o seu percurso
     public StreamLink getStreamFromArgs(String[] args){
         StreamLink res = null;
 
@@ -371,6 +378,7 @@ public class NodeState {
         return this.table.handleClosedNode(key);
     }
 
+    // remove ligação dependente de nodo que se fechou
     public boolean removeDependentLink(String viaNode, String to){
         NodeLink link = this.table.getLinkTo(to);
         if (link == null)
@@ -394,6 +402,7 @@ public class NodeState {
         return res;
     }
 
+    // repara uma stream que estava inativa
     public StreamLink fixStream(String streamIDs, String rcvNode, String[] nodesVisited, String orderedBy){
         StreamLink res = null;
         int streamID = Integer.parseInt(streamIDs);
@@ -428,6 +437,7 @@ public class NodeState {
         return res;
     }
 
+    // muda o estado de uma stream, quando esta muda de percurso
     public StreamLink changeStream(String streamIDs, String rcvNode, String[] nodesVisited, String orderedBy){
         StreamLink res = null;
         int streamID = Integer.parseInt(streamIDs);

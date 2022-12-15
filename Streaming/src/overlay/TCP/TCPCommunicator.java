@@ -9,7 +9,7 @@ import overlay.bootstrapper.BStrapper;
 import overlay.state.NodeLink;
 import overlay.state.NodeState;
 
-
+// cria uma thread que envia uma mensagem para outro nodo, a mensagem é definida através de um int que representa a mensagem a enviar
 public class TCPCommunicator extends Thread{
     private NodeState state;
     private InetAddress neighbor;

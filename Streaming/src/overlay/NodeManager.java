@@ -10,6 +10,7 @@ import overlay.state.NodeState;
 public class NodeManager {
     public static void main(String[] args){
         
+        // executa um nodo normal
         if (args.length == 1){
             NodeState state = BStrapperClient.readInitialMsg(args[0]);
 
@@ -19,6 +20,7 @@ public class NodeManager {
             }
         }
 
+        // executa um servidor
         else if (args.length == 2 && args[1].equals("server")){
             NodeState state = BStrapperClient.readInitialMsg(args[0]);
 
@@ -28,6 +30,7 @@ public class NodeManager {
             }
         }
 
+        // executa o bootstrapper como nodo normal
         else if (args.length == 2 && args[0].equals("config")){
             ConfigParser parser = new ConfigParser(args[1]);
             Graph graph = parser.parseXML();
@@ -46,6 +49,7 @@ public class NodeManager {
             }
         }
 
+        // executa o bootstrapper como servidor
         else if (args.length == 3 && args[0].equals("config") && args[2].equals("server")){
             ConfigParser parser = new ConfigParser(args[1]);
             Graph graph = parser.parseXML();

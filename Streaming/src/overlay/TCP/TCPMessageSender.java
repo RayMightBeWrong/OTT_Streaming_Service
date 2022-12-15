@@ -11,6 +11,7 @@ import overlay.state.NodeLink;
 import overlay.state.NodeState;
 import overlay.state.Vertex;
 
+// envia mensagens TCP atráves de uma ligação 
 public class TCPMessageSender {
     private PrintWriter out;
 
@@ -22,7 +23,6 @@ public class TCPMessageSender {
         out.println(msg);
         out.flush();
     }
-
 
     /*  BOOTSTRAPPER MESSAGES */
 

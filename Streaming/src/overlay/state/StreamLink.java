@@ -3,10 +3,15 @@ package overlay.state;
 import java.util.ArrayList;
 import java.util.List;
 
+// reprenta uma stream
 public class StreamLink {
+    // rota da stream
     private List<String> nodes;
     private int id;
     private boolean active;
+
+    // withChange, changeAt, changeAfterMe já não são usadas, eram usadas no CDN
+    // serviam para averiguar se um nodo estava capacitado para enviar conteúdo para outro nodo
     private boolean withChange;
     private String changeAt;
     private boolean changeAfterMe;
@@ -97,6 +102,7 @@ public class StreamLink {
         return this.nodes.get(this.nodes.size() - 1);
     }
 
+    // converte a rota para um array
     public String[] convertLinkToArgs(){
         String[] res = new String[nodes.size()];
 
@@ -106,6 +112,7 @@ public class StreamLink {
         return res;
     }
 
+    // encontra o próximo nodo na rota, dependendo da ordem
     public String findNextNode(String me, boolean order){
         String nextNode = "";
 

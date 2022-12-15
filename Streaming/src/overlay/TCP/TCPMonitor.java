@@ -8,6 +8,7 @@ import java.util.TimerTask;
 import overlay.state.NodeState;
 import overlay.state.Vertex;
 
+// thread que é executada periodicamente pelos servidores para monitorização da topologia
 public class TCPMonitor extends TimerTask{
     private NodeState state;
 

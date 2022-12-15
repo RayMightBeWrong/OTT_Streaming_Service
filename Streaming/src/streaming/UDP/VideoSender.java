@@ -10,6 +10,7 @@ import overlay.state.NodeLink;
 import overlay.state.NodeState;
 import overlay.state.StreamLink;
 
+// envia o vídeo, só usado em servidores
 public class VideoSender extends TimerTask{
     private DatagramPacket senddp;
     private DatagramSocket RTPsocket;
@@ -60,6 +61,7 @@ public class VideoSender extends TimerTask{
             
                     List<StreamLink> streams = this.state.getStreamLinks();
 
+                    // envia para todas as streams ativas que partem dele
                     for(StreamLink slink: streams){
                         if(slink != null){
                             RTPPacket RTPPacket = new RTPPacket(slink.getStreamID(), imagenb, imagenb * FRAME_PERIOD, buf, imageLength);
@@ -92,12 +94,9 @@ public class VideoSender extends TimerTask{
                     e.printStackTrace();
                 }
             }
+            // reinicia o loop
             else{
                 imagenb = 0;
-                //this.running = false;
-                //TCPCommunicator client;
-                //client = new TCPCommunicator(null, this.ownIP, TCPCommunicator.END_STREAM_CLIENT, this.stream.convertLinkToArgs());
-                //client.run();
             }
         }
     }

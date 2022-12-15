@@ -20,7 +20,8 @@ import overlay.state.Vertex;
 import streaming.UDP.UDPMiddleMan;
 import streaming.UDP.UDPServer;
 
-
+// gestor do nodo
+// recebe mensagens e define como reagir a estas e como estas afetam o estado do nodo
 public class TCPHandler {
     private NodeState state;
     private int nodeType;
@@ -65,6 +66,7 @@ public class TCPHandler {
         }
     }
 
+    // define como reagir às mensagens recebidas
     public void treatClient(Socket client) throws Exception{
         BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
 
@@ -154,6 +156,7 @@ public class TCPHandler {
             if (isPrefixOf(msg, "i am server")){
                 isServer = true;
             }
+            // envia hello e ping de volta
             else if (isPrefixOf(msg, "end")){
                 if (this.state.getAdjState(nodeName) == Vertex.OFF){
                     this.state.setAdjState(nodeName, Vertex.ON);
@@ -176,11 +179,16 @@ public class TCPHandler {
 
         String nodeName = this.state.findAdjNodeFromAddress(client.getInetAddress());
         NodeLink link = new NodeLink(nodeName, nodeName, client.getInetAddress(), Math.abs(duration.toNanos()));
+
+        // se o link criado pelo ping, for melhor que o atual
+        // ou se as condições da ligação se modificarem
+        // mudar o link na tabela e avisar adjacentes
         if(this.state.isLinkModified(nodeName, link)){
             this.state.addLink(nodeName, link);
             sendNewLinkToAdjacents(nodeName);
         }
         if(initialMsg){
+            // se for o "handshake" inicial, enviar ao adjacente os melhores links que tem
             sendRoutesToNewAdj(nodeName);
 
             msg = in.readLine();
@@ -227,9 +235,13 @@ public class TCPHandler {
                 viaInterface = ips.get(0);
                 NodeLink newLink = new NodeLink(name, viaNode, viaInterface, hops, cost);
 
+                // se o novo tivesse sido dado como desligado, retira-o da lista de desligados
                 if (this.state.isCloseNode(name))
                     this.state.removeClosedNode(name);
 
+                // muda de link se as condições se alterarem ou se for melhor que o link atual
+                // ou se o link reparar ligações cortadas
+                // e envia aos seus adjacentes (exceto o nodo que enviou)
                 if((fixer && destination.equals(this.state.getSelf())) || this.state.isLinkModified(name, newLink)){
                     NodeLink oldLink = this.state.getLinkTo(name);
                     this.state.addLink(name, newLink);
@@ -238,6 +250,7 @@ public class TCPHandler {
 
                         if ((this.state.isNodeReceivingStream(name))){
                             StreamLink stream = this.state.getStreamFromReceivingNode(name);
+                            // se o link reparar uma rota morta, envia aviso para reparar rota
                             if ((fixer || stream.getActive() == false) 
                                     && this.state.getSelf().equals(stream.getReceivingNode()) == false
                                     && viaNode.equals(stream.getServer()) == false){
@@ -247,12 +260,14 @@ public class TCPHandler {
                                         && oldLink != null
                                         && oldLink.getViaNode().equals(viaNode) == false
                                         && viaNode.equals(stream.getServer()) == false)
+                                // se encontrar um caminho melhor para um nodo que está a receber stream, envia aviso para modificar rota
                                 sendChangeStream(viaNode, String.valueOf(stream.getStreamID()), stream.getReceivingNode(), this.state.getSelf(), new String[0]);
                         }
 
                     printState();
                 }
                 else if (destination.equals("") == false){
+                    // se o link for destinado a outro nodo, reencaminha para esse nodo
                     sendNewLinkToAdjacent(destination, name, true);
                 }
                 else
@@ -263,6 +278,7 @@ public class TCPHandler {
         }
     }
 
+    // lê os melhores links que um nodo adjacente enviou
     public void readRoutes(BufferedReader in, String msg) throws Exception{
         String dest = "";
         String viaNode = "";
@@ -297,6 +313,9 @@ public class TCPHandler {
                 List<InetAddress> ips = this.state.findAddressesFromAdjNode(viaNode);
                 viaInterface = ips.get(0);
                 NodeLink newLink = new NodeLink(dest, viaNode, viaInterface, hops, cost);
+
+                // muda de link se as condições se alterarem ou se for melhor que o link atual
+                // e envia aos seus adjacentes (exceto o nodo que enviou)
                 if(this.state.isLinkModified(dest, newLink)){
                     this.state.addLink(dest, newLink);
                     sendNewLinkToAdjacents(dest, viaNode);
@@ -313,6 +332,8 @@ public class TCPHandler {
         printState();
     }
 
+    // lê mensagem de monitorização
+    // (foi retirado o que estava no relatório sobre enviar a apenas um adjacente de cada vez a mensagem)
     public void readMonitoring(Socket client, BufferedReader in, String msg) throws Exception{
         String[] args = getNodesVisited(msg, "monitoring: ");
 
@@ -347,17 +368,21 @@ public class TCPHandler {
                 break;
         }
 
+        // se o nodo for servidor, avisa os nodos no percurso até quem está pedir stream para preparem o intermediário de UDP
         if(this.state.getSelf().equals(server)){
             int streamNr = getNodeNr(this.state.getSelf()) * 100 + (this.state.getNrStreams() + 1);
             String[] args = {String.valueOf(streamNr)};
             sendOpenUDPMiddleMan(args, dest);
         }
         else{
+            // se o nodo estiver capacitado para reproduzir a stream (se passar por ele uma rota ativa), 
+            // avisa os nodos no percurso até quem está pedir stream para preparem o intermediário de UDP
             if(this.state.anyActiveStreamWithoutDefects() == true){
                 int streamNr = getNodeNr(this.state.getSelf()) * 100 + (this.state.getNrStreams() + 1);
                 String[] args = {String.valueOf(streamNr)};
                 sendOpenUDPMiddleMan(args, dest);
             }
+            // em último caso, reencaminho o pedido de stream
             else
                 sendStreamRequest(dest, server);
         }
@@ -377,11 +402,13 @@ public class TCPHandler {
                 break;
         }
 
+        // se não for o nodo for quem pediu stream, redireciona a mensagem e prepara o intermediário de UDP
         if (!this.state.getSelf().equals(dest)){
             sendOpenUDPMiddleMan(args, dest);
             startUDPMiddleMan();
         }
         else{
+            // se o nodo for quem pediu stream, envia ack para ativar a rota
             String[] newArgs = new String[args.length + 1];
             for(int i = 0; i < args.length; i++)
                 newArgs[i] = args[i];
@@ -418,12 +445,14 @@ public class TCPHandler {
         StreamLink stream = new StreamLink(streamArgs, Integer.parseInt(args[0]));
         this.state.addStream(stream);
 
+        // se for o nodo de onde se inicia a stream (servidor ou outro capaz), pára de reencaminhar
         if (this.state.getSelf().equals(args[1])){
             String from = this.state.findAdjNodeFromAddress(client.getInetAddress());
 
             if(this.state.isServer(this.state.getSelf()) == false)
                 this.middleman.sendTo(stream);
         }
+        // reencaminha a mensagem, caso contrário
         else{
             sendACKOpenUDPMiddleMan(args);
         }
@@ -439,6 +468,7 @@ public class TCPHandler {
                 break;
             }
 
+        // reencaminha a mensagem que um certo nodo se fechou e pede link para os links que tinha dependentes desse nodo
         if ((this.state.getAdjState(closedNode) == Vertex.ON || isAdj == false) && this.state.isCloseNode(closedNode) == false){
             this.state.addCloseNode(closedNode);
             String from = this.state.findAdjNodeFromAddress(client.getInetAddress());
@@ -456,12 +486,16 @@ public class TCPHandler {
         String to = getSuffixFromPrefix(msg, "? ");
 
         boolean lostNode = this.state.removeDependentLink(from, to);
+        // se receber esta mensagem de outro nodo (n1), a pedir para um nodo (n2)
+        // verifica se o seu link para n2 passa por n1, se sim, remove esse link
+        // e pede também nova ligação
         if (lostNode){
             List<String> lostNodes = new ArrayList<>();
             lostNodes.add(to);
             askLinkTo(lostNodes);
         }
 
+        // se tiver link, envia-o
         if (this.state.getLinkTo(to) != null){
             sendNewLinkToAdjacent(from, to, true);
         }
@@ -476,10 +510,12 @@ public class TCPHandler {
             if (this.state.isServer(this.state.getSelf())){
                 this.state.removeStream(stream);
             }
+            // cancela reencaminhamento por esta rota
             else
                 this.middleman.doNotSendTo(stream);
         }
         else{
+            // reencaminha a mensagem de cancelar stream
             String nextNode = stream.findNextNode(this.state.getSelf(), true);
 
             List<InetAddress> ips = this.state.findAddressesFromAdjNode(nextNode);
@@ -525,10 +561,12 @@ public class TCPHandler {
                 StreamLink stream = this.state.fixStream(streamID, rcv, nodesVisited, orderedBy);
             
                 if(stream != null){
+                    // se não for o nodo responsável pela stream, reencaminha a mensagem
                     if(this.state.getSelf().equals(stream.getServer()) == false){
                         sendAckFixStream(streamID, stream, orderedBy);
                     }
                 }
+                // se o nodo for novo na rota da stream, adiciona-a        
                 else{
                     stream = new StreamLink(nodesVisited, rcv, Integer.parseInt(streamID), true, orderedBy, this.state.getSelf());
                     this.state.addStream(stream);
@@ -536,10 +574,12 @@ public class TCPHandler {
                 }
             }
             else{
+                // se não for o destinatário da stream, reencaminha a mensagem e prepara intermediário de UDP
                 if(this.state.getSelf().equals(rcv) == false){
                     startUDPMiddleMan();
                     sendFixStream(rcv, streamID, rcv, orderedBy, nodesVisited);
                 }
+                // se for o destinário da stream, envia confirmação para ativar a rota
                 else{
                     StreamLink stream = this.state.fixStream(streamID, rcv, nodesVisited, orderedBy);
                     sendAckFixStream(streamID, stream, orderedBy);
@@ -577,10 +617,12 @@ public class TCPHandler {
             StreamLink stream = this.state.changeStream(streamID, rcv, nodesVisited, orderedBy);
             
             if(stream != null){
+                // se não for o nodo responsável pela stream, reencaminha a mensagem
                 if(this.state.getSelf().equals(stream.getServer()) == false){
                     sendAckChangeStream(streamID, stream, orderedBy);
                 }
             }
+            // se o nodo for novo na rota da stream, adiciona-a
             else{
                 stream = new StreamLink(nodesVisited, rcv, Integer.parseInt(streamID), true, orderedBy, this.state.getSelf());
                 this.state.addStream(stream);
@@ -588,10 +630,12 @@ public class TCPHandler {
             }
         }
         else{
+            // se não for o destinatário da stream, reencaminha a mensagem e prepara intermediário de UDP
             if(this.state.getSelf().equals(rcv) == false){
                 startUDPMiddleMan();
                 sendChangeStream(rcv, streamID, rcv, orderedBy, nodesVisited);
             }
+            // se for o destinário da stream, envia confirmação para ativar a rota
             else{
                 StreamLink stream = this.state.changeStream(streamID, rcv, nodesVisited, orderedBy);
                 sendAckChangeStream(streamID, stream, orderedBy);

@@ -18,8 +18,10 @@ import overlay.state.Vertex;
 
 public class BStrapperClient{
 
+    // nodo cria o seu estado inicial a partir da ligação ao bootstrapper
     public static NodeState readInitialMsg(String bstrapper){
         try {
+            // nodo ao ligar-se à rede, envia "hello" ao bootstrapper e recebe informação sobre ele próprio e sobre os seus vizinhos
             InetAddress bstrapperIP = InetAddress.getByName(bstrapper);
 
             Socket socket = new Socket(bstrapperIP, BStrapper.PORT);

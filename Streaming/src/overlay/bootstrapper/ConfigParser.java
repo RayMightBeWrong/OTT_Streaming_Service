@@ -30,6 +30,7 @@ public class ConfigParser {
         return this.bstrapperName;
     }
 
+    // cria o grafo da topologia a partir do ficheiro de configuração
     public Graph parseXML(){
         try{
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();

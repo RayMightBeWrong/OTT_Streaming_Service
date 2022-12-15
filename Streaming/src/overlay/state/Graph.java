@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+// usado pelo bootstrapper para representar a topologia
 public class Graph {
     private Map<String, Vertex> nodes;
 
@@ -21,6 +22,7 @@ public class Graph {
             return null;
     }
 
+    // devolve o nome a partir de uma das suas interfaces
     public String getNameFromIP(InetAddress ip){
         String ipString = ip.getHostAddress();
         String nodeName = "";
@@ -80,6 +82,7 @@ public class Graph {
         return states;
     }
 
+    // converte um grafo para o estado de um nodo
     public NodeState graphToNodeState(String self){
         List<InetAddress> ips = getNodeIPList(self);
         Map<String, List<InetAddress>> adjs = getNodeAdjacents(self);
