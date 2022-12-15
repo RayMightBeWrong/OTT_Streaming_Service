@@ -474,8 +474,6 @@ public class TCPHandler {
             StreamLink stream = this.state.getStreamFromArgs(args);
             if (this.state.isServer(this.state.getSelf()))
                 this.senders.get(stream.getReceivingNode()).pauseSender();
-            else
-                this.middleman.pauseSender(stream.getStreamID());
         }
         else{
             StreamLink stream = this.state.getStreamFromArgs(args);
@@ -671,10 +669,7 @@ public class TCPHandler {
                 List<InetAddress> ips = adjs.get(entry.getKey());
                 
                 Thread client;
-                if (this.nodeType == TCPHandler.NORMAL_NODE)
-                    client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.HELLO));
-                else
-                    client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.HELLO_SERVER));
+                client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.HELLO));
                 client.start();
                 client.join();
             }
@@ -749,8 +744,6 @@ public class TCPHandler {
             client.start();
             client.join();
         }
-
-
     }
 
     public void sendNewLinkToAdjacent(String fromNode, String to, boolean fixer) throws InterruptedException{
