@@ -538,7 +538,6 @@ public class TCPHandler {
 
         while(true){
             msg = in.readLine();
-            System.out.println(msg);
 
             if(isPrefixOf(msg, "leading to"))
                 rcv = getSuffixFromPrefix(msg, "leading to: ");
