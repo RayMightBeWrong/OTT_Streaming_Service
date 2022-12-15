@@ -740,14 +740,17 @@ public class TCPHandler {
     public void sendProbe(String key, boolean initial) throws InterruptedException{
         List<InetAddress> ips = this.state.findAddressesFromAdjNode(key);
 
-        Thread client;
-        if (initial)
-            client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.PROBE_INITIAL));
-        else
-            client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.PROBE_REGULAR));
+        for(InetAddress ip: ips){
+            Thread client;
+            if (initial)
+                client = new Thread(new TCPCommunicator(this.state, ip, TCPCommunicator.PROBE_INITIAL));
+            else
+                client = new Thread(new TCPCommunicator(this.state, ip, TCPCommunicator.PROBE_REGULAR));
+            client.start();
+            client.join();
+        }
 
-        client.start();
-        client.join();
+
     }
 
     public void sendNewLinkToAdjacent(String fromNode, String to, boolean fixer) throws InterruptedException{
