@@ -126,9 +126,7 @@ public class NodeState {
     public boolean isServer(String server){
         boolean isPresent = false;
             
-        System.out.println("POSSIBLE SERVER: " + server);
         for(String s: this.servers){
-            System.out.println("POSSIBLE: " + s); 
             if(s.equals(server)){
                 isPresent = true;
                 break;
