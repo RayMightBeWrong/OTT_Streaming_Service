@@ -896,17 +896,19 @@ public class TCPHandler {
 
     public void sendAckChangeStream(String streamID, StreamLink stream, String orderedBy) throws Exception{
         List<String> path = stream.getStream();
-        String[] args = new String[2 + path.size()];
-        args[0] = streamID;
-        args[1] = path.get(path.size() - 1);
-        args[2] = orderedBy;
-        for(int i = 0; i < path.size() - 1; i++)
-            args[i + 3] = path.get(i);
+        if(path != null){
+            String[] args = new String[2 + path.size()];
+            args[0] = streamID;
+            args[1] = path.get(path.size() - 1);
+            args[2] = orderedBy;
+            for(int i = 0; i < path.size() - 1; i++)
+                args[i + 3] = path.get(i);
 
-        String nextNode = stream.findNextNode(this.state.getSelf(), true);
-        List<InetAddress> ips = this.state.findAddressesFromAdjNode(nextNode);
-        Thread client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.ACK_CHANGE_STREAM, args));
-        client.run();
+            String nextNode = stream.findNextNode(this.state.getSelf(), true);
+            List<InetAddress> ips = this.state.findAddressesFromAdjNode(nextNode);
+            Thread client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.ACK_CHANGE_STREAM, args));
+            client.run();
+        }
     }
 
     public void sendStreamChanged(String streamID, StreamLink stream) throws Exception{
