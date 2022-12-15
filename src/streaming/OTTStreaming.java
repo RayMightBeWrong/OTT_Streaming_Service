@@ -76,7 +76,7 @@ public class OTTStreaming {
             cBuf = new byte[cBufLength];
 
             RTPsocket = new DatagramSocket(RTP_PORT);
-            RTPsocket.setSoTimeout(2000);
+            RTPsocket.setSoTimeout(3000);
         }
         catch(Exception e){}
     }

@@ -754,12 +754,14 @@ public class TCPHandler {
         List<InetAddress> ips = this.state.findAddressesFromAdjNode(fromNode);
 
         Thread client;
-        if (fixer)
-            client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.SEND_NEW_LINK_FIXER, to));
-        else
-            client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.SEND_NEW_LINK, to));
-        client.start();
-        client.join();
+        if (ips != null){
+            if (fixer)
+                client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.SEND_NEW_LINK_FIXER, to));
+            else
+                client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.SEND_NEW_LINK, to));
+            client.start();
+            client.join();
+        }
     }
 
     public void sendNewLinkToAdjacents(String fromNode) throws InterruptedException{
