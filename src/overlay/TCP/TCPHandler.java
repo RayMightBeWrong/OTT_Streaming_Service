@@ -851,10 +851,10 @@ public class TCPHandler {
         }
         args[i + 3] = this.state.getSelf();
 
-        List<InetAddress> ips = this.state.findAddressesFromAdjNode(dest);
+        NodeLink link = this.state.getLinkTo(dest);
         StreamLink stream = this.state.getStreamFromID(Integer.parseInt(streamID));
-        if (stream == null || dest.equals(stream.getServer()) == false){
-            Thread client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.FIX_STREAM, args));
+        if ((stream == null || dest.equals(stream.getServer()) == false) && link != null){
+            Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.FIX_STREAM, args));
             client.start();
         }
     }
@@ -885,10 +885,10 @@ public class TCPHandler {
         }
         args[i + 3] = this.state.getSelf();
 
-        List<InetAddress> ips = this.state.findAddressesFromAdjNode(dest);
+        NodeLink link = this.state.getLinkTo(dest);
         StreamLink stream = this.state.getStreamFromID(Integer.parseInt(streamID));
-        if (stream == null || dest.equals(stream.getServer()) == false){
-            Thread client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.CHANGE_STREAM, args));
+        if ((stream == null || dest.equals(stream.getServer()) == false) && link != null){
+            Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.CHANGE_STREAM, args));
             client.start();
         }
     }
