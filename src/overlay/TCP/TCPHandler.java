@@ -72,40 +72,40 @@ public class TCPHandler {
             String msg = in.readLine();
             System.out.println("S: " + msg);
 
-            if (isHello(msg)){
+            if (isPrefixOf(msg, "hello")){
                 readHello(client, in, msg); break;
             }
-            else if (isProbe(msg)){
+            else if (isPrefixOf(msg, "probe")){
                 readProbe(client, in, msg); break;
             }
-            else if (isNewLink(msg)){
+            else if (isPrefixOf(msg, "new link")){
                 readNewLink(client, in, msg, false); break;
             }
-            else if (isNewLinkFixer(msg)){
+            else if (isPrefixOf(msg, "fixer new link")){
                 readNewLink(client, in, msg, true); break;
             }
-            else if (isRoutes(msg)){
+            else if (isPrefixOf(msg, "routes from")){
                 readRoutes(in, msg); break;
             }
-            else if (isMonitoring(msg)){
+            else if (isPrefixOf(msg, "monitoring")){
                 readMonitoring(client, in, msg); break;
             }
-            else if (isStreamClient(msg)){
+            else if (isPrefixOf(msg, "i want a stream")){
                 sendStreamRequest(); break;
             }
-            else if (isAskStreaming(msg)){
+            else if (isPrefixOf(msg, "want streaming")){
                 readAskStreaming(in, msg); break;
             }
-            else if (isOpenUDPMiddleMan(msg)){
+            else if (isPrefixOf(msg, "open UDP middleman")){
                 readOpenUDPMiddleMan(client, in, msg); break;
             }
-            else if (isACKOpenUDPMiddleMan(msg)){
+            else if (isPrefixOf(msg, "ack open UDP middleman")){
                 readACKOpenUDPMiddleMan(client, in, msg); break;
             }
-            else if (isNodeClosed(msg)){
+            else if (isPrefixOf(msg, "node closed")){
                 readNodeClosed(client, msg); break;
             }
-            else if (isRequestLink(msg)){
+            else if (isPrefixOf(msg, "?")){
                 readRequestLink(client, msg); break;
             }
             else if (isPrefixOf(msg, "fix stream")){
@@ -128,26 +128,14 @@ public class TCPHandler {
                 sendStreamRequest();
                 break;
             }
-            else if (isPauseStream(msg)){
-                readPauseStream(msg); break;
-            }
-            else if (isCancelStreamClient(msg)){
+            else if (isPrefixOf(msg, "cancel stream client")){
                 sendCancelStream(); break;
             }
-            else if (isCancelStream(msg)){
+            else if (isPrefixOf(msg, "cancel stream")){
                 readCancelStream(msg); break;
             }
-
-
-
-
-            
-            else if (isPauseStreamClient(msg)){
-                sendPauseStreaming(); break;
-            }
-            else if (isPauseStream(msg)){
-                readPauseStream(msg); break;
-            }
+            else if (isPrefixOf(msg, "end"))
+                break;
         }
 
         client.close();
@@ -166,7 +154,7 @@ public class TCPHandler {
             if (isPrefixOf(msg, "i am server")){
                 isServer = true;
             }
-            else if (isEnd(msg)){
+            else if (isPrefixOf(msg, "end")){
                 if (this.state.getAdjState(nodeName) == Vertex.OFF){
                     this.state.setAdjState(nodeName, Vertex.ON);
                     if (isServer)
@@ -180,7 +168,7 @@ public class TCPHandler {
     }
     
     public void readProbe(Socket client, BufferedReader in, String msg) throws Exception{
-        boolean initialMsg = isProbeInitial(msg);
+        boolean initialMsg = isPrefixOf(msg, "probe: initial");
 
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime timestamp = getTimestampFromProbe(msg, initialMsg);
@@ -234,7 +222,7 @@ public class TCPHandler {
             else if (isPrefixOf(msg, "give to")){
                 destination = getSuffixFromPrefix(msg, "give to: ");
             }
-            else if (isEnd(msg)){
+            else if (isPrefixOf(msg, "end")){
                 List<InetAddress> ips = this.state.findAddressesFromAdjNode(viaNode);
                 viaInterface = ips.get(0);
                 NodeLink newLink = new NodeLink(name, viaNode, viaInterface, hops, cost);
@@ -318,7 +306,7 @@ public class TCPHandler {
                     isServer = false;
                 }
             }
-            else if (isEnd(msg))
+            else if (isPrefixOf(msg, "end"))
                 break;
         }
 
@@ -337,10 +325,10 @@ public class TCPHandler {
         while(true){
             msg = in.readLine();
             
-            if(isProbe(msg)){
+            if(isPrefixOf(msg, "probe")){
                 readProbe(client, in, msg);
             }
-            else if (isEnd(msg))
+            else if (isPrefixOf(msg, "end"))
                 break;
         }
     }
@@ -355,7 +343,7 @@ public class TCPHandler {
             if (isPrefixOf(msg, "from server")){
                 server = getSuffixFromPrefix(msg, "from server: ");
             }
-            else if (isEnd(msg))
+            else if (isPrefixOf(msg, "end"))
                 break;
         }
 
@@ -385,7 +373,7 @@ public class TCPHandler {
             if(isPrefixOf(msg, "sent to")){
                 args = getNodesVisited(msg, "sent to: ");
             }
-            else if (isEnd(msg))
+            else if (isPrefixOf(msg, "end"))
                 break;
         }
 
@@ -419,7 +407,7 @@ public class TCPHandler {
             if(isPrefixOf(msg, "sent to")){
                 args = getNodesVisited(msg, "sent to: ");
             }
-            else if (isEnd(msg))
+            else if (isPrefixOf(msg, "end"))
                 break;
         }
 
@@ -479,26 +467,6 @@ public class TCPHandler {
         }
     }
 
-    public void readPauseStream(String msg) throws Exception{
-        String[] args = getNodesVisited(msg, "pause stream: ");
-
-        if (this.state.getSelf().equals(args[0])){
-            StreamLink stream = this.state.getStreamFromArgs(args);
-            if (this.state.isServer(this.state.getSelf()))
-                this.senders.get(stream.getReceivingNode()).pauseSender();
-            else
-                this.middleman.pauseSender(stream.getStreamID());
-        }
-        else{
-            StreamLink stream = this.state.getStreamFromArgs(args);
-            String nextNode = stream.findNextNode(this.state.getSelf(), true);
-            NodeLink link = this.state.getLinkTo(nextNode);
-
-            Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.PAUSE_STREAMING, args));
-            client.run();
-        }
-    }
-
     public void readCancelStream(String msg) throws Exception{
         String[] args = getNodesVisited(msg, "cancel stream: ");
 
@@ -513,9 +481,9 @@ public class TCPHandler {
         }
         else{
             String nextNode = stream.findNextNode(this.state.getSelf(), true);
-            NodeLink link = this.state.getLinkTo(nextNode);
 
-            Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.CANCEL_STREAM, args));
+            List<InetAddress> ips = this.state.findAddressesFromAdjNode(nextNode);
+            Thread client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.CANCEL_STREAM, args));
             client.run();
 
             if (this.middleman.hasDependentStreams(stream))
@@ -524,21 +492,7 @@ public class TCPHandler {
 
         this.state.removeStream(stream);
     }
-
-    public void readEndStream(String msg) throws Exception{
-        String[] args = getNodesVisited(msg, "end stream: ");
-        StreamLink stream = this.state.getStreamFromArgs(args);
-
-        if (this.state.getSelf().equals(stream.getReceivingNode()) == false){
-            String nextNode = stream.findNextNode(this.state.getSelf(), false);
-            NodeLink link = this.state.getLinkTo(nextNode);
-
-            Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.END_STREAM, args));
-            client.run();
-        }
-
-        this.state.removeStream(stream);
-    }
+    
 
     public void readFixStream(boolean ack, BufferedReader in, String msg) throws Exception{
         String streamID;
@@ -552,7 +506,6 @@ public class TCPHandler {
 
         while(true){
             msg = in.readLine();
-            System.out.println(msg);
 
             if(isPrefixOf(msg, "leading to"))
                 rcv = getSuffixFromPrefix(msg, "leading to: ");
@@ -561,7 +514,7 @@ public class TCPHandler {
             else if (isPrefixOf(msg, "going through")){
                 nodesVisited = getNodesVisited(msg, "going through: ");
             }
-            else if (isEnd(msg)){
+            else if (isPrefixOf(msg, "end")){
                 break;
             }
         }
@@ -615,7 +568,7 @@ public class TCPHandler {
             else if (isPrefixOf(msg, "going through")){
                 nodesVisited = getNodesVisited(msg, "going through: ");
             }
-            else if (isEnd(msg)){
+            else if (isPrefixOf(msg, "end")){
                 break;
             }
         }
@@ -659,7 +612,7 @@ public class TCPHandler {
             else if (isPrefixOf(msg, "going through")){
                 nodesVisited = getNodesVisited(msg, "going through: ");
             }
-            else if (isEnd(msg)){
+            else if (isPrefixOf(msg, "end")){
                 break;
             }
         }
@@ -683,10 +636,7 @@ public class TCPHandler {
                 List<InetAddress> ips = adjs.get(entry.getKey());
                 
                 Thread client;
-                if (this.nodeType == TCPHandler.NORMAL_NODE)
-                    client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.HELLO));
-                else
-                    client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.HELLO_SERVER));
+                client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.HELLO));
                 client.start();
                 client.join();
             }
@@ -733,44 +683,20 @@ public class TCPHandler {
         client.run();
     }
 
-    public void sendPauseStreaming(){
-        StreamLink myStream = this.state.getMyStream();
-        String[] args = myStream.convertLinkToArgs();
-        String nextNode = myStream.findNextNode(this.state.getSelf(), true);
-        NodeLink link = this.state.getLinkTo(nextNode);
-
-        Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.PAUSE_STREAMING, args));
-        client.run();
-    }
-
     public void sendCancelStream() throws Exception{
         StreamLink myStream = this.state.getMyStream();
 
         if(myStream != null){
             String[] args = myStream.convertLinkToArgs();
             String nextNode = myStream.findNextNode(this.state.getSelf(), true);
-            NodeLink link = this.state.getLinkTo(nextNode);
-
-            Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.CANCEL_STREAM, args));
-            client.run();
+            List<InetAddress> ips = this.state.findAddressesFromAdjNode(nextNode);
+            
+            if (ips != null){
+                Thread client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.CANCEL_STREAM, args));
+                client.run();
+            }
             this.state.removeStream(myStream);
         }
-    }
-
-    public void sendEndStream(String msg) throws Exception{
-        String[] args = getNodesVisited(msg, "end stream client: ");
-        StreamLink stream = this.state.getStreamFromArgs(args);
-        String nextNode = stream.findNextNode(this.state.getSelf(), false);
-        NodeLink link = this.state.getLinkTo(nextNode);
-
-        Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.END_STREAM, args));
-        client.run();
-
-        if (this.state.isServer(this.state.getSelf())){
-            this.senders.get(stream.getReceivingNode()).cancelSender();
-            this.senders.remove(stream.getReceivingNode());
-        }
-        this.state.removeStream(stream);
     }
 
     public void sendProbe(String key, boolean initial) throws InterruptedException{
@@ -781,21 +707,22 @@ public class TCPHandler {
             client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.PROBE_INITIAL));
         else
             client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.PROBE_REGULAR));
-
         client.start();
         client.join();
     }
 
     public void sendNewLinkToAdjacent(String fromNode, String to, boolean fixer) throws InterruptedException{
-        NodeLink link = this.state.getLinkTo(fromNode);
+        List<InetAddress> ips = this.state.findAddressesFromAdjNode(fromNode);
 
         Thread client;
-        if (fixer)
-            client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.SEND_NEW_LINK_FIXER, to));
-        else
-            client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.SEND_NEW_LINK, to));
-        client.start();
-        client.join();
+        if (ips != null){
+            if (fixer)
+                client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.SEND_NEW_LINK_FIXER, to));
+            else
+                client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.SEND_NEW_LINK, to));
+            client.start();
+            client.join();
+        }
     }
 
     public void sendNewLinkToAdjacents(String fromNode) throws InterruptedException{
@@ -875,8 +802,9 @@ public class TCPHandler {
                 break;
             }
         }
-        NodeLink link = this.state.getLinkTo(dest);
-        Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.ACK_OPEN_UDP_MIDDLEMAN, args));
+
+        List<InetAddress> ips = this.state.findAddressesFromAdjNode(dest);
+        Thread client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.ACK_OPEN_UDP_MIDDLEMAN, args));
         client.start();
     }
 
@@ -923,7 +851,7 @@ public class TCPHandler {
 
         NodeLink link = this.state.getLinkTo(dest);
         StreamLink stream = this.state.getStreamFromID(Integer.parseInt(streamID));
-        if (stream == null || link.getViaNode().equals(stream.getServer()) == false){
+        if ((stream == null || dest.equals(stream.getServer()) == false) && link != null){
             Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.FIX_STREAM, args));
             client.start();
         }
@@ -939,9 +867,8 @@ public class TCPHandler {
             args[i + 3] = path.get(i);
 
         String nextNode = stream.findNextNode(this.state.getSelf(), true);
-        System.out.println("nextNode: " + nextNode);
-        NodeLink link = this.state.getLinkTo(nextNode);
-        Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.ACK_FIX_STREAM, args));
+        List<InetAddress> ips = this.state.findAddressesFromAdjNode(nextNode);
+        Thread client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.ACK_FIX_STREAM, args));
         client.run();
     }
 
@@ -958,7 +885,7 @@ public class TCPHandler {
 
         NodeLink link = this.state.getLinkTo(dest);
         StreamLink stream = this.state.getStreamFromID(Integer.parseInt(streamID));
-        if (stream == null || link.getViaNode().equals(stream.getServer()) == false){
+        if ((stream == null || dest.equals(stream.getServer()) == false) && link != null){
             Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.CHANGE_STREAM, args));
             client.start();
         }
@@ -967,17 +894,19 @@ public class TCPHandler {
 
     public void sendAckChangeStream(String streamID, StreamLink stream, String orderedBy) throws Exception{
         List<String> path = stream.getStream();
-        String[] args = new String[2 + path.size()];
-        args[0] = streamID;
-        args[1] = path.get(path.size() - 1);
-        args[2] = orderedBy;
-        for(int i = 0; i < path.size() - 1; i++)
-            args[i + 3] = path.get(i);
+        if(path != null){
+            String[] args = new String[2 + path.size()];
+            args[0] = streamID;
+            args[1] = path.get(path.size() - 1);
+            args[2] = orderedBy;
+            for(int i = 0; i < path.size() - 1; i++)
+                args[i + 3] = path.get(i);
 
-        String nextNode = stream.findNextNode(this.state.getSelf(), true);
-        NodeLink link = this.state.getLinkTo(nextNode);
-        Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.ACK_CHANGE_STREAM, args));
-        client.run();
+            String nextNode = stream.findNextNode(this.state.getSelf(), true);
+            List<InetAddress> ips = this.state.findAddressesFromAdjNode(nextNode);
+            Thread client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.ACK_CHANGE_STREAM, args));
+            client.run();
+        }
     }
 
     public void sendStreamChanged(String streamID, StreamLink stream) throws Exception{
@@ -989,8 +918,8 @@ public class TCPHandler {
             args[i + 2] = path.get(i);
 
         String nextNode = stream.findNextNode(this.state.getSelf(), true);
-        NodeLink link = this.state.getLinkTo(nextNode);
-        Thread client = new Thread(new TCPCommunicator(this.state, link.getViaInterface(), TCPCommunicator.STREAM_CHANGED_COURSE, args));
+        List<InetAddress> ips = this.state.findAddressesFromAdjNode(nextNode);
+        Thread client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.STREAM_CHANGED_COURSE, args));
         client.run();
     }
 
@@ -1007,106 +936,6 @@ public class TCPHandler {
                 res = false;
 
         return res;
-    }
-
-    public boolean isHello(String msg){
-        return isPrefixOf(msg, "hello");
-    }
-
-    public boolean isProbe(String msg){
-        return isPrefixOf(msg, "probe");
-    }
-
-    public boolean isProbeInitial(String msg){
-        return isPrefixOf(msg, "probe: initial");
-    }
-
-    public boolean isNewLink(String msg){
-        return isPrefixOf(msg, "new link");
-    }
-
-    public boolean isRoutes(String msg){
-        return isPrefixOf(msg, "routes from");
-    }
-
-    public boolean isMonitoring(String msg){
-        return isPrefixOf(msg, "monitoring");
-    }
-
-    public boolean isStreamClient(String msg){
-        return isPrefixOf(msg, "i want a stream");
-    }
-
-    public boolean isAskStreaming(String msg){
-        return isPrefixOf(msg, "want streaming");
-    }
-
-    public boolean isNewStreamSignal(String msg){
-        return isPrefixOf(msg, "sending stream to");
-    }
-
-    public boolean isOpenUDPMiddleMan(String msg){
-        return isPrefixOf(msg, "open UDP middleman");
-    }
-
-    public boolean isACKOpenUDPMiddleMan(String msg){
-        return isPrefixOf(msg, "ack open UDP middleman");
-    }
-
-    public boolean isNodeClosed(String msg){
-        return isPrefixOf(msg, "node closed");
-    }
-
-    public boolean isRequestLink(String msg){
-        return isPrefixOf(msg, "?");
-    }
-
-    public boolean isPauseStreamClient(String msg){
-        return isPrefixOf(msg, "pause stream client");
-    }
-
-    public boolean isPauseStream(String msg){
-        return isPrefixOf(msg, "pause stream");
-    }
-
-    public boolean isCancelStreamClient(String msg){
-        return isPrefixOf(msg, "cancel stream client");
-    }
-
-    public boolean isCancelStream(String msg){
-        return isPrefixOf(msg, "cancel stream");
-    }
-
-    public boolean isEndStreamClient(String msg){
-        return isPrefixOf(msg, "end stream client");
-    }
-
-    public boolean isEndStream(String msg){
-        return isPrefixOf(msg, "end stream");
-    }
-
-    public boolean isNewLinkFixer(String msg){
-        return isPrefixOf(msg, "fixer new link");
-    }
-
-    public boolean isFixStream(String msg){
-        return isPrefixOf(msg, "fix stream");
-    }
-
-    public boolean isAckFixStream(String msg){
-        return isPrefixOf(msg, "ack fix stream");
-    }
-
-    public boolean isChangeStream(String msg){
-        return isPrefixOf(msg, "change stream");
-    }
-
-    public boolean isAckChangeStream(String msg){
-        return isPrefixOf(msg, "ack change stream");
-    }
-
-    public boolean isEnd(String msg){
-        return isPrefixOf(msg, "end");
     }
 
     public boolean isNodeInArray(String[] nodes, String node){

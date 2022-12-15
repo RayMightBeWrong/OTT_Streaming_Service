@@ -32,6 +32,7 @@ public class OTTStreaming {
     private byte[] cBuf;
     private int cBufLength = 15000;
     private boolean running;
+    private int errorI = 0;
 
     public OTTStreaming(String ipName){
         try{
@@ -76,7 +77,7 @@ public class OTTStreaming {
             cBuf = new byte[cBufLength];
 
             RTPsocket = new DatagramSocket(RTP_PORT);
-            RTPsocket.setSoTimeout(2000);
+            RTPsocket.setSoTimeout(3000);
         }
         catch(Exception e){}
     }
@@ -154,8 +155,6 @@ public class OTTStreaming {
                 RTPsocket.receive(rcvdp);
 
                 RTPPacket rtp_packet = new RTPPacket(rcvdp.getData(), rcvdp.getLength());
-                //System.out.println("Got RTP packet with SeqNum # "+rtp_packet.getsequencenumber()+" TimeStamp "+rtp_packet.gettimestamp()+" ms, of type "+rtp_packet.getpayloadtype());
-                //rtp_packet.printheader();
 
                 int payload_length = rtp_packet.getpayload_length();
                 byte [] payload = new byte[payload_length];
@@ -168,11 +167,15 @@ public class OTTStreaming {
                 iconLabel.setIcon(icon);
             }
             catch(InterruptedIOException iioe){
-                // TODO - enviar a cada 2 segundos depois de já ter enviado
-                TCPCommunicator client;
-                client = new TCPCommunicator(null, connectorIP, TCPCommunicator.STREAM_BROKEN_CLIENT);
-                client.run();
-                System.out.println("Nothing to read");
+                if (errorI == 0){
+                    TCPCommunicator client;
+                    client = new TCPCommunicator(null, connectorIP, TCPCommunicator.STREAM_BROKEN_CLIENT);
+                    client.run();
+                    System.out.println("Nothing to read");
+                }
+                errorI ++;
+                if (errorI == 5)
+                    errorI = 0;
             }
             catch(IOException ioe){
                 System.out.println("Exception caught: " + ioe);
