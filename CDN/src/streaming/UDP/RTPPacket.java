@@ -76,6 +76,7 @@ public class RTPPacket {
         }
     }
 
+
     public int getpacket(byte[] packet){
         for (int i=0; i < HEADER_SIZE; i++)
             packet[i] = header[i];

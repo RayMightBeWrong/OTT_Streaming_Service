@@ -31,15 +31,13 @@ public class OTTStreaming {
     private Timer cTimer;
     private byte[] cBuf;
     private int cBufLength = 15000;
-    private boolean running;
-    private int errorI = 0;
 
     public OTTStreaming(String ipName){
         try{
             connectorIP = InetAddress.getByName(ipName);
             frame = new JFrame("STREAM CLIENT");
             runButton = new JButton("RUN");
-            //pausePlayButton = new JButton("PAUSE / PLAY");
+            pausePlayButton = new JButton("PAUSE / PLAY");
             teardownButton = new JButton("TEARDOWN");
             mainPanel = new JPanel();
             buttonPanel = new JPanel();
@@ -53,11 +51,11 @@ public class OTTStreaming {
 
             buttonPanel.setLayout(new GridLayout(1, 0));
             buttonPanel.add(runButton);
-            //buttonPanel.add(pausePlayButton);
+            buttonPanel.add(pausePlayButton);
             buttonPanel.add(teardownButton);
 
             runButton.addActionListener(new RunButtonListener());
-            //pausePlayButton.addActionListener(new PausePlayButtonListener());
+            pausePlayButton.addActionListener(new PausePlayButtonListener());
             teardownButton.addActionListener(new TeardownButtonListener());
 
             iconLabel.setIcon(null);
@@ -77,7 +75,7 @@ public class OTTStreaming {
             cBuf = new byte[cBufLength];
 
             RTPsocket = new DatagramSocket(RTP_PORT);
-            RTPsocket.setSoTimeout(3000);
+            RTPsocket.setSoTimeout(5000);
         }
         catch(Exception e){}
     }
@@ -119,11 +117,9 @@ public class OTTStreaming {
             client = new TCPCommunicator(null, connectorIP, TCPCommunicator.OPEN_STREAM_CLIENT);
             client.run();
             cTimer.start();
-            running = true;
         }
     }
 
-    /*
     class PausePlayButtonListener implements ActionListener{
         public void actionPerformed(ActionEvent e){
             System.out.println("PAUSE button pressed!");
@@ -133,7 +129,6 @@ public class OTTStreaming {
             client.run();
         }
     }
-     */
 
     class TeardownButtonListener implements ActionListener{
         public void actionPerformed(ActionEvent e){
@@ -142,7 +137,6 @@ public class OTTStreaming {
             TCPCommunicator client;
             client = new TCPCommunicator(null, connectorIP, TCPCommunicator.CANCEL_STREAM_CLIENT);
             client.run();
-            running = false;
         }
     }
 
@@ -150,11 +144,12 @@ public class OTTStreaming {
         public void actionPerformed(ActionEvent e){
             rcvdp = new DatagramPacket(cBuf, cBufLength);
 
-            if (running){
             try{
                 RTPsocket.receive(rcvdp);
 
                 RTPPacket rtp_packet = new RTPPacket(rcvdp.getData(), rcvdp.getLength());
+                //System.out.println("Got RTP packet with SeqNum # "+rtp_packet.getsequencenumber()+" TimeStamp "+rtp_packet.gettimestamp()+" ms, of type "+rtp_packet.getpayloadtype());
+                //rtp_packet.printheader();
 
                 int payload_length = rtp_packet.getpayload_length();
                 byte [] payload = new byte[payload_length];
@@ -167,19 +162,10 @@ public class OTTStreaming {
                 iconLabel.setIcon(icon);
             }
             catch(InterruptedIOException iioe){
-                if (errorI == 0){
-                    TCPCommunicator client;
-                    client = new TCPCommunicator(null, connectorIP, TCPCommunicator.STREAM_BROKEN_CLIENT);
-                    client.run();
-                    System.out.println("Nothing to read");
-                }
-                errorI ++;
-                if (errorI == 5)
-                    errorI = 0;
+                System.out.println("Nothing to read");
             }
             catch(IOException ioe){
                 System.out.println("Exception caught: " + ioe);
-            }
             }
         }
     }

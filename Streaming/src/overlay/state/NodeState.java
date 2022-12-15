@@ -383,6 +383,17 @@ public class NodeState {
             return false;
     }
 
+    public int getNrActiveAdjs(){
+        int res = 0;
+
+        for(Map.Entry<String, Integer> entry: this.node.getAdjacentsState().entrySet()){
+            if (entry.getValue() == Vertex.ON)
+                res++;
+        }
+
+        return res;
+    }
+
     public StreamLink fixStream(String streamIDs, String rcvNode, String[] nodesVisited, String orderedBy){
         StreamLink res = null;
         int streamID = Integer.parseInt(streamIDs);

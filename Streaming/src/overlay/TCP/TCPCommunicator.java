@@ -18,7 +18,6 @@ public class TCPCommunicator extends Thread{
     private Object extraInfo;
 
     public static final int HELLO = 1;
-    public static final int HELLO_SERVER = 2;
     public static final int PROBE_INITIAL = 4;
     public static final int PROBE_REGULAR = 5;
     public static final int SEND_NEW_LINK = 6;
@@ -69,9 +68,6 @@ public class TCPCommunicator extends Thread{
             switch(this.behaviour){
                 case HELLO:
                     sender.hello(); break;
-
-                case HELLO_SERVER:
-                    sender.helloServer(); break;
 
                 case PROBE_INITIAL:
                     sender.probe(true, this.state); break;

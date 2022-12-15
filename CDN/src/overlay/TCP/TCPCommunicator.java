@@ -18,6 +18,7 @@ public class TCPCommunicator extends Thread{
     private Object extraInfo;
 
     public static final int HELLO = 1;
+    public static final int HELLO_SERVER = 2;
     public static final int PROBE_INITIAL = 4;
     public static final int PROBE_REGULAR = 5;
     public static final int SEND_NEW_LINK = 6;
@@ -40,10 +41,6 @@ public class TCPCommunicator extends Thread{
     public static final int SEND_NEW_LINK_FIXER = 24;
     public static final int FIX_STREAM = 25;
     public static final int ACK_FIX_STREAM = 26;
-    public static final int CHANGE_STREAM = 27;
-    public static final int ACK_CHANGE_STREAM = 28;
-    public static final int STREAM_CHANGED_COURSE = 29;
-    public static final int STREAM_BROKEN_CLIENT = 30;
 
 
     public TCPCommunicator(NodeState state, InetAddress neighbor, int behaviour){
@@ -68,6 +65,9 @@ public class TCPCommunicator extends Thread{
             switch(this.behaviour){
                 case HELLO:
                     sender.hello(); break;
+
+                case HELLO_SERVER:
+                    sender.helloServer(); break;
 
                 case PROBE_INITIAL:
                     sender.probe(true, this.state); break;
@@ -170,24 +170,6 @@ public class TCPCommunicator extends Thread{
                     String[] args3 = (String[]) extraInfo;
                     sender.ackFixStream(args3);
                     break;
-
-                case CHANGE_STREAM:
-                    String[] args4 = (String[]) extraInfo;
-                    sender.changeStream(args4);
-                    break;
-
-                case ACK_CHANGE_STREAM:
-                    String[] args5 = (String[]) extraInfo;
-                    sender.ackChangeStream(args5);
-                    break;
-
-                case STREAM_CHANGED_COURSE:
-                    String[] args6 = (String[]) extraInfo;
-                    sender.streamChangedCourse(args6);
-                    break;
-
-                case STREAM_BROKEN_CLIENT:
-                    sender.streamBrokenClient(); break;
             }
 
             socket.close();
