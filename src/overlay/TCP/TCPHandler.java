@@ -27,6 +27,7 @@ public class TCPHandler {
     private Map<String, UDPServer> senders;
     private UDPServer server;
     private UDPMiddleMan middleman;
+    private int monitorI;
 
     public static final int PORT = 6667;
 
@@ -804,16 +805,23 @@ public class TCPHandler {
         Map<String, Integer> adjsState = this.state.getNodeAdjacentsState();
         Map<String, List<InetAddress>> adjs = this.state.getNodeAdjacents();
 
+        int i = 0;
         for(Map.Entry<String, Integer> entry: adjsState.entrySet()){
             if (entry.getValue() == Vertex.ON){
-                if(!isNodeInArray(nodesVisited, entry.getKey())){
+                if(!isNodeInArray(nodesVisited, entry.getKey()) && this.monitorI == i){
                     List<InetAddress> ips = adjs.get(entry.getKey());
                     Thread client = new Thread(new TCPCommunicator(this.state, ips.get(0), TCPCommunicator.MONITORING, nodesVisited));
                     client.start();
                     client.join();
                 }
+                i++;
             }
         }
+
+        this.monitorI++;
+        if (this.monitorI++ >= this.state.getNrActiveAdjs())
+            this.monitorI = 0;
+
     }
 
     public void sendOpenUDPMiddleMan(String[] nodesInfo, String dest){
